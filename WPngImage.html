@@ -1,0 +1,1177 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>WPngImage documentation</title>
+  <style type="text/css"> <!--
+html
+{
+  background-color: #DDDDDD;
+}
+
+body
+{
+  background-color: white;
+  margin-left: 5%;
+  margin-top: 16px;
+  margin-right: 5%;
+  padding-top: 2em;
+  padding-left: 7%;
+  padding-right: 7%;
+  padding-bottom: 2%;
+  border-color: black;
+  border: solid;
+  border-width: 1px;
+}
+
+h1
+{
+  text-align: center;
+  background-color: #FFEEA0;
+  padding-bottom: 0.2em;
+  padding-top: 0.1em;
+}
+
+h2
+{
+  background-color: #FFE0A0;
+  padding-left: 0.5em;
+}
+
+h3
+{
+  background-color: #FFFFA0;
+}
+
+h4
+{
+  background-color: #FFFFD0;
+}
+
+li
+{
+  padding-top: 0.3em;
+}
+
+pre
+{
+  background-color: #E0E0E0;
+  padding-left: 1em;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-color: black;
+  border: solid;
+  border-width: 1px;
+  color: #004070;
+}
+
+code
+{
+  font-family: monospace;
+  color: #206000;
+}
+
+.comment
+{
+  color: #008000;
+}
+--> </style>
+</head>
+
+<body>
+<h1>WPngImage documentation</h1>
+
+<p><code>WPngImage</code> is a C++ wrapper class around the
+  <a href="http://www.libpng.org/">libpng</a> library.</p>
+
+<p>The main goal of <code>WPngImage</code> is to be as easy and simple to use as possible, while
+  still being expressive and supporting a variety of PNG pixel formats. The design
+  philosophy of this library is to aim for simplicity and ease-of-use, using a "plug&amp;play"
+  principle: Just one header file, and one source file. Simply add them to your project,
+  and that's it. No myriads of source files, no configuration scripts and makefiles necessary.
+  The only requirement is for libpng to be installed and available to your compiler.</p>
+
+<p><code>WPngImage</code> supports internal pixel representations in 8-bits-per-channel,
+  16-bits-per-channel and floating point, in RGBA or gray-alpha modes. The public interface
+  of the class has been designed in such a manner that all these internal representations
+  can be handled in the same way, with identical code, regardless of what the format of
+  the pixels is (although, if necessary, the program <em>can</em> perform different operations
+  depending on the internal pixel format.) A variety of arithmetic and colorspace
+  conversion operations for pixels are provided.</p>
+
+<p><code>WPngImage</code> also supports decoding and encoding PNG images from/to memory
+  (a feature that most other image manipulation libraries lack, even though this can be
+  very useful in many situations.)</p>
+
+<p>By default <code>WPngImage</code> uses C++11 for some convenience functionality and
+  efficiency (eg. it implements a move constructor and assignment operator). The class can
+  be compiled in C++98 mode if necessary, though. Consult the <a href="#compiling">Compiling</a>
+  section for details.</p>
+
+<p>Table of contents:</p>
+
+<ul>
+  <li><a href="#license">License</a></li>
+  <li><a href="#tutorial">Introductory tutorial</a></li>
+  <ul>
+    <li><a href="#tutorial_create_png">Creating a PNG image</a></li>
+    <li><a href="#tutorial_load_save_png">Loading, changing and saving a PNG image</a></li>
+    <li><a href="#tutorial_drawing">Drawing images and lines</a></li>
+    <li><a href="#tutorial_color_spaces">Color spaces</a></li>
+    <li><a href="#tutorial_change_pixel_format">Changing pixel formats</a></li>
+    <li><a href="#tutorial_pixel_formats_advantages">Advantages and disadvantages of different
+	pixel formats</a></li>
+  </ul>
+  <li><a href="#compiling">Compiling</a></li>
+  <li><a href="#macros">Precompiler macros</a></li>
+  <li><a href="#wpngimage_reference">WPngImage reference</a></li>
+  <ul>
+    <li><a href="#wpngimage_enums">Enumerated values</a></li>
+    <li><a href="#wpngimage_constructors">Constructors</a></li>
+    <li><a href="#pngimage_copying">Copying, assignment, moving, swapping</a></li>
+    <li><a href="#wpngimage_new_image">Create new image</a></li>
+    <li><a href="#wpngimage_load_file">Load a PNG file</a></li>
+    <li><a href="#wpngimage_load_ram">Decode a PNG from RAM</a></li>
+    <li><a href="#wpngimage_save_file">Save to a PNG file</a></li>
+    <li><a href="#wpngimage_save_ram">Encode to PNG to RAM</a></li>
+    <li><a href="#wpngimage_iostatus">IOStatus</a></li>
+    <li><a href="#wpngimage_properties">Image properties</a></li>
+    <li><a href="#wpngimage_pixels">Getting and setting pixels</a></li>
+    <li><a href="#wpngimage_drawing_images">Drawing images</a></li>
+    <li><a href="#wpngimage_drawing_lines">Drawing lines</a></li>
+    <li><a href="#wpngimage_resize_canvas">Resize canvas</a></li>
+  </ul>
+  <li><a href="#pixel_reference">Pixel reference</a></li>
+  <ul>
+    <li><a href="#pixel_types">Pixel types</a></li>
+    <li><a href="#pixel_constructors">Constructors</a></li>
+    <li><a href="#pixel_arithmetic">Arithmetic operators</a></li>
+    <li><a href="#pixel_color_space_conversions">Color space conversions</a></li>
+    <li><a href="#pixel_other">Other operations</a></li>
+  </ul>
+</ul>
+
+<!---------------------------------------------------------------------------->
+<h2 id="license">License</h2>
+
+<p>The source code of this software is published under the MIT license.</p>
+
+<p>Copyright (c) 2016 Juha Nieminen
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+
+<!---------------------------------------------------------------------------->
+<h2 id="tutorial">Introductory tutorial</h2>
+<h3 id="tutorial_create_png">Creating a PNG image</h3>
+
+<p>This is an example of a minimal full program that simply creates a PNG image file,
+  containing a red-green gradient across it. (Note that in subsequent examples the
+  include and main() will be omitted, for brevity.)</p>
+
+<pre>#include "WPngImage.hh"
+
+int main()
+{
+    WPngImage image(256, 256);
+
+    for(int y = 0; y &lt; image.height(); ++y)
+        for(int x = 0; x &lt; image.width(); ++x)
+            image.set(x, y, WPngImage::Pixel8(x, y, 0));
+
+    image.saveImage("example.png");
+}</pre>
+
+<p>The constructor can also take a pixel value to fill the newly created image
+  (the default being black, with full alpha). For example:</p>
+
+<pre><span class="comment">// New image with fully transparent pixels:</span>
+WPngImage image(256, 256, WPngImage::Pixel8(0, 0, 0, 0));</pre>
+
+<p>By default an 8-bits-per-channel RGBA image will be created. You can also choose to create
+  a 16-bits-per-channel or floating-point image, or a grayscale image (using any of the three
+  bit depths). This can be done by either giving a
+  pixel of the correspondent type to the constructor, or the correspondent value of
+  type <code>WPngImage::PixelFormat</code>. (In the case of grayscale pixel formats, only
+  the latter option is possible.) Examples:</p>
+
+<pre><span class="comment">// New 16-bits-per-channel images:</span>
+WPngImage image1(256, 256, WPngImage::Pixel16(65535, 65535, 65535)); <span class="comment">// white</span>
+WPngImage image2(256, 256, WPngImage::kPixelFormat_RGBA16); <span class="comment">// black</span>
+
+<span class="comment">// New floating-point images:</span>
+WPngImage image3(256, 256, WPngImage::PixelF(1.0, 1.0, 1.0)); <span class="comment">// white</span>
+WPngImage image4(256, 256, WPngImage::kPixelFormat_RGBAF); <span class="comment">// black</span>
+
+<span class="comment">// New grayscale images:</span>
+WPngImage image5(256, 256, WPngImage::kPixelFormat_GA8);
+WPngImage image6(256, 256, WPngImage::kPixelFormat_GA16);
+WPngImage image7(256, 256, WPngImage::kPixelFormat_GAF);</pre>
+
+<p>Note that a floating point image will be saved as an integer image to PNG (because floating
+  point components are not supported by the PNG format.) Using a floating point image during
+  creation or manipulation can, however, be useful for several reasons (eg. they are uncapped,
+  ie. can go outside the range from 0.0 to 1.0, while the integer pixel values will be capped
+  to their respective range.)</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="tutorial_load_save_png">Loading, changing and saving a PNG image</h3>
+
+<p>This example will load a png image, invert it (ie. make it a negative) and
+  save it to another file (error handling is omitted for brevity).</p>
+
+<pre>WPngImage image;
+auto status = image.loadImage("photo.png");
+
+if(status != WPngImage::kIOStatus_Ok)
+{ <span class="comment">/* handle error */</span> }
+else
+{
+    for(int y = 0; y &lt; image.height(); ++y)
+        for(int x = 0; x &lt; image.width(); ++x)
+            image.set(x, y, 65535 - image.get16(x, y));
+
+    image.saveImage("photo_negative.png");
+}</pre>
+
+<p>The <code>get16()</code> function will return an object of type
+  <code>WPngImage::Pixel16</code>, which is a 16-bits-per-channel pixel type (ie. with
+  pixel channel values ranging from 0 to 65535). This is independent of the actual pixel
+  format used by the image (which by default, like here, will be the closest pixel format
+  that matches the input PNG.) Even if the image itself uses eg. 8-bits-per-channel, the
+  conversion between the two is done transparently.</p>
+
+<p>In this example <code>get16()</code> was used because it's the best way to preserve accuracy
+  regardless of what pixel format the input PNG file uses. In other words, if the input PNG was
+  also 16-bits-per-channel, the result will be accurate to that bit depth. However, it doesn't
+  matter if the input PNG used 8-bits-per-channel: The result will also likewise do so, and
+  the result will also be accurate to that bit depth.</p>
+
+<p>Another possibility is to use floating point pixels instead. This also preserves full accuracy
+  regardless of the bit depth of the input PNG file, but on the other hand, requires extra
+  conversions between integers and floating point:</p>
+
+<pre>            image.set(x, y, 1.0 - image.getF(x, y));</pre>
+
+<p>One advantage of using floating point pixels is that they will be uncapped (ie. their values
+  can go beyond the range from 0.0 to 1.0). The integer pixels will be capped to their range
+  and can't go beyond them (any operation that would make them go beyond that range will be
+  clamped to the range.) Note, however, that if the <code>WPngImage</code> instance itself uses
+  integer pixels, the floating point pixels given to it will be converted to integer ones (and
+  thus capped to their respective range.)</p>
+
+<p>If you know that the input uses 8-bits-per-channel, you can, of course, perform the operation
+  using pixels of that bit depth:</p>
+
+<pre>            image.set(x, y, 255 - image.get8(x, y));</pre>
+
+<p>(This will work even if the image is using 16 bits per channel, but the operation above
+  will in this case be inaccurate, as the lowest 8 bits of accuracy will be lost.)</p>
+
+<p>A diverse set of arithmetic operations are supported for pixels, and detailed in the
+  section <a href="#pixel_arithmetic">Arithmetic operators</a>.</p>
+
+<p>You can access and modify the members of the pixel object directly, if the provided operators
+  do not suffice. For example:</p>
+
+<pre>auto pixel = image.get16(x, y);
+pixel.r *= 2;
+pixel.g /= 4;
+image.set(x, y, pixel);</pre>
+
+<p>By default the image will be saved using the same pixel format as the input file. The image
+  can be saved with another pixel format by specifying it to the <code>saveImage()</code>
+  function. See the section <a href="#wpngimage_save_file">Saving</a> for details.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="tutorial_drawing">Drawing images and lines</h3>
+
+<p><code>WPngImage</code> offers a couple of basic drawing functions for convenience.</p>
+
+<pre>image.putImage(10, 20, anotherImage);
+image.putImage(50, 100, anotherImage, 10, 10, 80, 80);
+
+image.drawImage(10, 20, anotherImage);
+image.drawImage(50, 100, anotherImage, 10, 10, 80, 80);
+
+image.drawHorLine(10, 20, 100, WPngImage::Pixel8(255, 255, 255, 190));
+image.drawVertLine(10, 20, 100, WPngImage::Pixel8(255, 255, 255, 190));</pre>
+
+<p><code>putImage()</code> and <code>drawImage()</code> take another <code>WPngImage</code>
+  object and copy its contents to this image at the specified coordinates. The coordinates
+  specify where the upper left corner of the parameter will be. This is a convenient
+  way of eg. composing an image out of other images.</p>
+
+<p>A sub-section of the parameter image can be specified as four additional coordinates.
+  The first two specify the upper left corner of the sub-section in the parameter image,
+  and the next two the width and height of the sub-section. In the above examples, an 80x80
+  section, with the upper left corner of the section being at (10, 10), will be used from
+  the parameter image. (When these are not specified, the entire parameter image will be used.)</p>
+
+<p>It's ok if the specified coordinates, or the parameter image, are outside the boundaries of
+  this image. Only the visible part will be drawn onto this image. Likewise it's ok if the
+  sub-section coordinates are outside of the parameter image (they will be handled as if
+  the image had fully transparent pixels around it.)</p>
+
+<p>The difference between <code>putImage()</code> and <code>drawImage()</code> is that the
+  former will simply assign the target pixels with the source pixels, overwriting them.
+  The latter will mix the pixels using alpha blending (ie. effectively drawing the parameter
+  image on top of this image.) This makes a difference if the parameter image has non-full
+  alpha pixels.</p>
+
+<p><code>drawHorLine()</code> and <code>drawVertLine()</code> draw a horizontal/vertical
+  line, starting at the coordinates specified by the first two parameters, with a length of
+  the third parameter. (It's ok for any of these to be out of boundaries, and for the length
+  to be negative.) Alpha blending will be used to draw the line (which makes a difference
+  if the alpha of the given pixel is not full.)</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="tutorial_color_spaces">Color spaces</h3>
+
+<p><code>WPngImage</code> supports conversions between RGB pixels and several color spaces.
+  This example will shift the hue of the image by 90 degrees (without affecting its saturation
+  or lightness):</p>
+
+<pre>for(int y = 0; y &lt; image.height(); ++y)
+    for(int x = 0; x &lt; image.width(); ++x)
+    {
+        WPngImage::HSL hsl = image.get16(x, y).toHSL();
+        hsl.h += 0.25;
+        image.set(x, y, WPngImage::Pixel16(hsl));
+    }</pre>
+
+<p>For a full list of supported color space conversions, see the section
+  <a href="#pixel_color_space_conversions">Color space conversions</a>.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="tutorial_change_pixel_format">Changing pixel formats</h3>
+
+<p>This example is similar to the previous one, but it converts an image to grayscale:</p>
+
+<pre>WPngImage image;
+auto status = image.loadImage("photo.png");
+
+if(status != WPngImage::kIOStatus_Ok)
+{ <span class="comment">/* handle error */</span> }
+else
+{
+    for(int y = 0; y &lt; image.height(); ++y)
+        for(int x = 0; x &lt; image.width(); ++x)
+            image.set(x, y, image.get16(x, y).grayCIEPixel());
+
+    image.saveImage("photo_grayscale.png");
+}</pre>
+
+<p>(Note that you can also use <code>grayPixel()</code> instead of <code>grayCIEPixel()</code>,
+  but the latter is more accurate, although a bit less efficient.)</p>
+
+<p>The example converts the image to grayscale, but preserves the original pixel format.
+  (In other words, if the input PNG was eg. 8-bits-per-channel RGBA, so will the
+  <code>WPngImage</code> object and the output PNG.) The same can be achieved by changing
+  the pixel format to grayscale.</p>
+
+<p>There are several options for this. We can make <code>PngImage</code> load the image
+  directly into an internal grayscale pixel format representation:</p>
+
+<pre>image.loadImage("photo.png", WPngImage::kPngReadConvert_Grayscale);
+image.saveImage("photo_grayscale.png");</pre>
+
+<p>In this case, the pixels will be stored as gray-alpha values inside the <code>image</code>
+  object. (Setting a pixel with a non-grayscale value will cause it to be automatically
+  converted to grayscale.)</p>
+
+<p>Note that, however, <code>WPngImage</code> will by default save the image with the same
+  pixel format as the input file. Thus, in the above example, if the input PNG file used
+  RGBA, so will the resulting PNG file. We can override this behavior by telling
+  the class to match the current pixel format, rather than the one in the input file:</p>
+
+<pre>image.loadImage("photo.png", WPngImage::kPngReadConvert_Grayscale);
+image.saveImage("photo_grayscale.png", WPngImage::kPngWriteConvert_closestMatch);</pre>
+
+<p>We can also specify a specific output pixel format to <code>saveImage()</code>:</p>
+
+<pre>image.loadImage("photo.png");
+image.saveImage("photo_grayscale.png", WPngImage::kPngFileFormat_GA8);</pre>
+
+<p>In this case, the image will be loaded and handled with whatever pixel format the input
+  file has, but written to the output file as an 8-bit grayscale PNG.</p>
+
+<p>The used file format can also be specified separately, so that it doesn't need to be
+  given to <code>saveImage()</code> every time:</p>
+
+<pre>image.loadImage("photo.png");
+image.setFileFormat(WPngImage::kPngFileFormat_GA8);
+image.saveImage("photo_grayscale.png");</pre>
+
+<p>A final option is to convert the image to another pixel format (grayscale in this case)
+  after it has been loaded:</p>
+
+<pre>image.loadImage("photo.png");
+image.convertToPixelFormat(WPngImage::kPixelFormat_GA8);
+image.saveImage("photo_grayscale.png", WPngImage::kPngWriteConvert_closestMatch);</pre>
+
+<p>If you would prefer to retain the bit depth if the original PNG file, you can check this
+  depth with the <code>is8BPCPixelFormat()</code> or the <code>is16BPCPixelFormat()</code>
+  functions. Thus you could write, for example:</p>
+
+<pre>if(image.is8BPCPixelFormat())
+    image.convertToPixelFormat(WPngImage::kPixelFormat_GA8);
+else
+    image.convertToPixelFormat(WPngImage::kPixelFormat_GA16);</pre>
+
+<p>(It's not necessary to check if the image is <em>already</em> in the desired pixel format.
+  If it is, then <code>convertToPixelFormat()</code> will do nothing.)</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="tutorial_pixel_formats_advantages">Advantages and disadvantages of different
+pixel formats</h3>
+
+<p>Why have different pixel formats anyway? Why not always convert the input file to eg.
+  floating point, which has the maximum accuracy and range? It would simplify things.</p>
+
+<p>It would indeed make some things a bit simpler, but there are advantages and disadvantages
+  to each pixel format, which is why this class supports several of them.</p>
+
+<p>Firstly, memory usage: Floating point RGBA pixels (<code>WPngImage::kPixelFormat_RGBAF</code>)
+  will take 4x4=16 bytes per pixel. This means that, for example, a 1920x1080 image will
+  take 32 megabytes of RAM. On the other extreme, an 8-bit gray image
+  (<code>WPngImage::kPixelFormat_GA8</code>) will take 2 bytes per pixel, meaning that the
+  1920x1080 image will take 4 megabytes of RAM. This can be important especially if a lot of
+  images are being handled at the same time.</p>
+
+<p>The memory required by each pixel format is as follows (with an example of how much memory
+  a 1920x1080 image would require):</p>
+
+<ul>
+  <li><code>WPngImage::kPixelFormat_GA8</code>: 2 bytes per pixel (4 MB).</li>
+  <li><code>WPngImage::kPixelFormat_GA16</code>: 4 bytes per pixel (8 MB).</li>
+  <li><code>WPngImage::kPixelFormat_GAF</code>: 8 bytes per pixel (16 MB).</li>
+  <li><code>WPngImage::kPixelFormat_RGBA8</code>: 4 bytes per pixel (8 MB).</li>
+  <li><code>WPngImage::kPixelFormat_RGBA16</code>: 8 bytes per pixel (16 MB).</li>
+  <li><code>WPngImage::kPixelFormat_RGBAF</code>: 16 bytes per pixel (32 MB).</li>
+</ul>
+
+<p>However, larger bit depths will obviously have more accuracy, which can be important with
+  some calculations. 8-bits-per-channel may be too inaccurate for some applications.</p>
+
+<p>8-bit and 16-bit pixel formats are clamped to their respective range (ie. 0-255 and 0-65535
+  respectively). If any operation would make them go outside of that range, it will be clamped
+  to the range. (You can of course modify the <code>r</code>, <code>g</code>, <code>b</code>
+  and <code>a</code> members of the pixel object directly, but in that case the value will
+  simply wrap around, as per the C++ unsigned integer arithmetic rules.)</p>
+
+<p>Floating point pixels do not have this limitation. They can go beyond their range from 0.0
+  to 1.0. This can be used for example for HDR calculations. Note, however, that if the
+  <code>WPngImage</code> instance is not using a floating point pixel format, if you set
+  a pixel with a floating point pixel value, it will be converted to the current integer
+  pixel format, clamping the values as needed.</p>
+
+<p>Thus if retaining the floating point values in the image is necessary, it's recommended
+  to specify a floating point pixel format (when creating or loading an image). This is also
+  recommended if a lot of floating point operations will be done to the image, as this forgoes
+  the need to do integer-to-float and float-to-integer conversions every time.</p>
+
+<p>Note, however, that when saving to a PNG file, the pixels will be saved in an integer format,
+  clamping the values as needed (because the PNG format does not support floating point
+  pixels.)</p>
+
+
+<!---------------------------------------------------------------------------->
+<h2 id="compiling">Compiling</h2>
+
+<p><code>WPngImage</code> has been designed with a simple "plug&amp;play" principle:
+  it consists of a single header file and a single source file. It's enough to add them
+  to your project, or compiler command. The files should be put in a place in the project
+  so that other files can do an <code>#include "WPngImage.hh"</code>.</p>
+
+<p>The class requires <a href="http://www.libpng.org/">libpng</a>, which should thus be
+  available to the compiler, and compiled into the project. For example, in a typical Linux
+  system a program can be compiled like:</p>
+
+<pre>g++ -O3 -std=c++14 test.cc WPngImage.cc -lpng</pre>
+
+<p>By default the class uses some C++11 features for additional convenience and efficiency
+  (for example it implements a move constructor and move assignment operator). If necessary,
+  however, it can be compiled in C++98 compatibility mode (in which case those additional
+  features will not be available). To do this, either edit the <code>WPngImage.hh</code> file
+  and at the beginning of the file, change the line</p>
+
+<pre>#define WPNGIMAGE_RESTRICT_TO_CPP98 0</pre>
+
+<p>to</p>
+
+<pre>#define WPNGIMAGE_RESTRICT_TO_CPP98 1</pre>
+
+<p>or create the precompiler macro <code>WPNGIMAGE_RESTRICT_TO_CPP98</code> with a value of
+  <code>1</code> in your project/compiler settings (in which case <code>WPngImage.hh</code>
+  doesn't need to be edited.) For example with g++ it would happen like:</p>
+
+<pre>g++ -O3 -DWPNGIMAGE_RESTRICT_TO_CPP98=1 test.cc WPngImage.cc -lpng</pre>
+
+<!---------------------------------------------------------------------------->
+<h2 id="macros">Precompiler macros</h2>
+
+<p><code>WPngImage.hh</code> defines the following precompiler macros:</p>
+
+<pre>WPNGIMAGE_VERSION</pre>
+
+<p>An integer containing three values in its three least-significant bytes: Major version
+  (third-least-significant byte), minor version (second-least-significant byte), minor
+  sub-version (least-significant byte). For example, the value <code>0x010000</code> indicates
+  the version 1.0.0.</p>
+
+<pre>WPNGIMAGE_VERSION_STRING</pre>
+
+<p>The version in string format. For example, <code>"1.0.0"</code>.</p>
+
+<pre>WPNGIMAGE_COPYRIGHT_STRING</pre>
+
+<p>A string containing short copyright info. For example,
+  <code>"WPngImage v1.0.0 (C)2016 Juha Nieminen"</code>.</p>
+
+<!---------------------------------------------------------------------------->
+<h2 id="wpngimage_reference">WPngImage reference</h2>
+<h3 id="wpngimage_enums">Enumerated values</h3>
+
+<p>These enumerated values defined inside <code>WPngImage</code> are used by the various
+  member functions:</p>
+
+<pre><span class="comment">// PNG file format</span>
+enum PngFileFormat
+{
+    kPngFileFormat_none,
+    kPngFileFormat_GA8, <span class="comment">// 8 bits-per-channel gray-alpha</span>
+    kPngFileFormat_GA16, <span class="comment">// 16 bits-per-channel gray-alpha</span>
+    kPngFileFormat_RGBA8, <span class="comment">// 8 bits-per-channel RGBA</span>
+    kPngFileFormat_RGBA16 <span class="comment">// 16 bits-per-channel RGBA</span>
+};
+
+<span class="comment">// Pixel format</span>
+enum PixelFormat
+{
+    kPixelFormat_GA8, <span class="comment">// 8 bits-per-channel gray-alpha</span>
+    kPixelFormat_GA16, <span class="comment">// 16 bits-per-channel gray-alpha</span>
+    kPixelFormat_GAF, <span class="comment">// Floating point gray-alpha</span>
+    kPixelFormat_RGBA8, <span class="comment">// 8 bits-per-channel RGBA</span>
+    kPixelFormat_RGBA16, <span class="comment">// 16 bits-per-channel RGBA</span>
+    kPixelFormat_RGBAF <span class="comment">// Floating point RGBA</span>
+};
+
+<span class="comment">// PNG loading pixel format conversion</span>
+enum PngReadConvert
+{
+    kPngReadConvert_closestMatch,
+    kPngReadConvert_8bit,
+    kPngReadConvert_16bit,
+    kPngReadConvert_Float,
+    kPngReadConvert_Grayscale,
+    kPngReadConvert_RGBA
+};
+
+<span class="comment">// PNG saving pixel format conversion</span>
+enum PngWriteConvert
+{
+    kPngWriteConvert_original,
+    kPngWriteConvert_closestMatch
+};</pre>
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_constructors">Constructors</h3>
+
+<pre>WPngImage();
+WPngImage(int width, int height, PixelFormat = kPixelFormat_RGBA8);
+WPngImage(int width, int height, Pixel8, PixelFormat = kPixelFormat_RGBA8);
+WPngImage(int width, int height, Pixel16, PixelFormat = kPixelFormat_RGBA16);
+WPngImage(int width, int height, PixelF, PixelFormat = kPixelFormat_RGBAF);</pre>
+
+<p>The default constructor creates an empty instance, with no image data. (Any operation
+  done to such an instance will just do nothing.) An image can then be either created
+  with the <code>newImage()</code> functions or loaded with <code>loadImage()</code>
+  or <code>loadImageFromRAM()</code>.</p>
+
+<p>The other constructors will create a new image of the specified size. A pixel value,
+  used to fill this new image, can be specified (the default being a black pixel with full
+  alpha.) The pixel format can likewise be specified, if the default value is not suitable.</p>
+
+<p>Example:</p>
+
+<pre><span class="comment">// New image with fully transparent pixels:</span>
+WPngImage image(256, 256, WPngImage::Pixel8(0, 0, 0, 0));</pre>
+
+<!---------------------------------------------------------------------------->
+<h3 id="pngimage_copying">Copying, assignment, moving, swapping</h3>
+
+<p><code>WPngImage</code> performs a deep copy when copied or assigned to another instance.
+  In C++11 mode it implements a move constructor and move assignment for efficiency.</p>
+
+<p><code>WPngImage</code> instances can also be explicitly and efficiently moved and swapped
+  with these member functions (only some pointers are moved/swapped rather than all the image
+  data):</code>
+
+<pre>void move(WPngImage&amp;);
+void swap(WPngImage&amp;);</pre>
+
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_new_image">Create new image</h3>
+
+<pre>void newImage(int width, int height, PixelFormat = kPixelFormat_RGBA8);
+void newImage(int width, int height, Pixel8, PixelFormat = kPixelFormat_RGBA8);
+void newImage(int width, int height, Pixel16, PixelFormat = kPixelFormat_RGBA16);
+void newImage(int width, int height, PixelF, PixelFormat = kPixelFormat_RGBAF);</pre>
+
+<p>These are completely equivalent to the constructors. Any previously existing image data
+  in this instance will be destroyed before creating the new image data.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_load_file">Load a PNG file</h3>
+
+<pre>IOStatus loadImage(const char* fileName,
+                   PngReadConvert = kPngReadConvert_closestMatch);
+IOStatus loadImage(const char* fileName, PixelFormat);
+
+IOStatus loadImage(const std::string& fileName,
+                   PngReadConvert = kPngReadConvert_closestMatch);
+IOStatus loadImage(const std::string& fileName, PixelFormat);</pre>
+
+<p>The PNG file specified by <code>fileName</code> will be attempted to be loaded.
+  The second parameter can be a value of type <code>WPngImage::PngReadConvert</code>, which
+  specifies what kind of pixel format conversion policy ought to be used for the read image,
+  or directly a value of type <code>WPngImage::PixelFormat</code> if the conversion should
+  be to a specific pixel format.</p>
+
+<p>The different values of <code>WPngImage::PngReadConvert</code> have the following meanings:</p>
+
+<ul>
+  <li><code>WPngImage::kPngReadConvert_closestMatch</code>: The pixel format that most closely
+    matches the input PNG file, without loss of data, will be used. (This affects whether a
+    grayscale or RGBA pixel format is used, as well as whether an 8-bit or 16-bit format is
+    used.)</li>
+  <li><code>WPngImage::kPngReadConvert_8bit</code>: The read image will be converted to an
+    8-bits-per-channel pixel format (retaining whether it was grayscale or RGBA).</li>
+  <li><code>WPngImage::kPngReadConvert_16bit</code>: The read image will be converted to an
+    16-bits-per-channel pixel format (retaining whether it was grayscale or RGBA).</li>
+  <li><code>WPngImage::kPngReadConvert_Float</code>: The read image will be converted to a
+    floating point pixel format (retaining whether it was grayscale or RGBA).</li>
+  <li><code>WPngImage::kPngReadConvert_Grayscale</code>: The read image will be converted to
+    a grayscale pixel format, with matching bit depth.</li>
+  <li><code>WPngImage::kPngReadConvert_RGBA</code>: The read image will be converted to
+    an RGBA pixel format, with matching bit depth.</li>
+</ul>
+
+<p>See the section <a href="#wpngimage_iostatus">IOStatus</a> for details on the return value.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_load_ram">Decode a PNG from RAM</h3>
+
+<pre>IOStatus loadImageFromRAM(const void* pngData, std::size_t pngDataSize,
+                          PngReadConvert = kPngReadConvert_closestMatch);
+IOStatus loadImageFromRAM(const void* pngData, std::size_t pngDataSize, PixelFormat);</pre>
+
+<p>A PNG image can also be decoded from RAM. These work in the same way as
+  <code>loadImage()</code>, but they take a pointer and the size of the data (in bytes).</p>
+
+<p>The class has no way of checking that the pointer points to a valid location and that the
+  size parameter is correct. Thus it's up to the calling code to make sure that they do.</p>
+
+<p>See the section <a href="#wpngimage_iostatus">IOStatus</a> for details on the return value.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_save_file">Save to a PNG file</h3>
+
+<pre>IOStatus saveImage(const char* fileName,
+                   PngWriteConvert = kPngWriteConvert_original);
+IOStatus saveImage(const char* fileName, PngFileFormat);
+
+IOStatus saveImage(const std::string& fileName,
+                   PngWriteConvert = kPngWriteConvert_original);
+IOStatus saveImage(const std::string& fileName, PngFileFormat);</pre>
+
+<p>Save the current image data to a PNG file. (If there is currently no image data,
+  does nothing.) A specific PNG pixel format can be specified as a second parameter (see section
+  <a href="#wpngimage_enums">Enumerated values</a>.)</p>
+
+<p>Alternatively, a conversion policy can be specified as the second parameter. This will
+  have an effect only if the current image was loaded from a file (or from memory). If the
+  current image was created (using a constructor or a call to <code>newImage()</code>), then
+  either conversion policy will just be interpreted as matching the current pixel format.</p>
+
+<p><code>WPngImage::PngWriteConvert</code> can have the following values:</p>
+
+<ul>
+  <li><code>WPngImage::kPngWriteConvert_original</code>: The image will be saved using the
+    pixel format that most closely matches the one in the PNG file that was loaded (even if
+    it's different from the pixel format currently being used.) For example, if the original
+    PNG file was RGBA with 8 bits-per-channel, and it was loaded to an RGBAF pixel format,
+    with this parameter it will be saved back to an RGBA 8 bits-per-channel format.</li>
+  <li><code>WPngImage::kPngWriteConvert_closestMatch</code>: The image will be saved using
+    the pixel format that most closely matches the one being currently used (ignoring the
+    pixel format of the file that was loaded). If a floating point pixel format is being
+    used, it will be saved with 16 bits-per-channel.</li>
+</ul>
+
+<p>The "original pixel format of the PNG file" can be changed after loading a file with
+  a call to the function:</p>
+
+<pre>void setFileFormat(PngFileFormat);</pre>
+
+<p>After this, <code>WPngImage::kPngWriteConvert_original</code> (which is the default when
+  calling <code>saveImage()</code> without a second parameter) will be interpreted as
+  that specified format.</p>
+
+<p>Note that if all the pixels to be saved are fully opaque (ie. have full alphas), saving the
+  alpha channel will be omitted (ie. the image will be saved in RGB or gray format, without an
+  alpha channel.)</p>
+
+<p>See the section <a href="#wpngimage_iostatus">IOStatus</a> for details on the return value.</p>
+
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_save_ram">Encode to PNG to RAM</h3>
+
+<p>Encoding the image to a PNG in RAM is not as straigforward as decoding it because the
+  final size of the data cannot be known in advance. Two options are provided to do this:</p>
+
+<p>Encode into a <code>std::vector&lt;unsigned char&gt;</code>:</p>
+
+<pre>IOStatus saveImageToRAM(std::vector&lt;unsigned char&gt;&amp; dest,
+                        PngWriteConvert = kPngWriteConvert_original);
+IOStatus saveImageToRAM(std::vector&lt;unsigned char&gt;&amp; dest, PngFileFormat);</pre>
+
+<p>Pass the encoded data to a callback function:</p>
+
+<pre>using ByteStreamOutputFunc = std::function&lt;void(const unsigned char*, std::size_t)&gt;;
+
+IOStatus saveImageToRAM(ByteStreamOutputFunc,
+                        PngWriteConvert = kPngWriteConvert_original);
+IOStatus saveImageToRAM(ByteStreamOutputFunc, PngFileFormat);</pre>
+
+<p>Note that in the latter case, the callback function will be called numerous times, with
+  differing amounts of data, which should be appended to each other by the function.</p>
+
+<p>In C++11 mode, anything that behaves like a function taking two parameters,
+  <code>(const unsigned char*, std::size_t)</code>, be it a raw function, a functor object,
+  or a lambda, can be used. If the library is compiled in C++98 compatibility mode, however,
+  the above type alias will instead be:</p>
+
+<pre>typedef void(*ByteStreamOutputFunc)(const unsigned char*, std::size_t);</pre>
+
+<p>meaning that only a raw function can be used.</p>
+
+<p>See the next section for details on the return value.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_iostatus">IOStatus</h3>
+
+<p><code>WPngImage::IOStatus</code> is an object returned by the loading and saving functions.
+  It's implicitly convertible to a value of the enumerated type
+  <code>WPngImage::IOStatusValue</code>, which has the following possible values:</p>
+
+<ul>
+  <li><code>WPngImage::kIOStatus_Ok</code>: The operation completed successfully.</li>
+  <li><code>WPngImage::kIOStatus_Error_CantOpenFile</code>: The file could not be opened
+    (for either loading or saving). The standard library macro <code>errno</code> can be checked
+    for the more specific reason (most likely case is that the file doesn't exist, in the case
+    of loading.)</li>
+  <li><code>WPngImage::kIOStatus_Error_NotPNG</code>: The signature in the file/data fails check.
+    This is most probably not a PNG file at all.</li>
+  <li><code>WPngImage::kIOStatus_Error_PNGLibraryError</code>: libpng returned an error while
+    decoding or encoding the data.</li>
+</ul>
+
+<p>In the last case, the member <code>std::string</code> variable <code>pngLibErrorMsg</code>
+  of the <code>WPngImage::IOStatus</code> object, if not empty, will contain the error message
+  returned by libpng. (For example, if the PNG data was corrupted, the message will be something
+  like "IDAT: CRC error".)</p>
+
+<p>A simplistic error handling routine can simply check if the return value is equal to
+  <code>WPngImage::kIOStatus_Ok</code>, and consider it an error otherwise.</p>
+
+<p>Example of how to handle the return value in a more detailed manner:</p>
+
+<pre>const auto status = image.loadImage(filename);
+switch(status)
+{
+ case WPngImage::kIOStatus_Error_CantOpenFile:
+    std::perror(filename);
+    break;
+
+ case WPngImage::kIOStatus_Error_NotPNG:
+    std::cerr &lt;&lt; filename &lt;&lt; " is not a PNG file.\n";
+    break;
+
+ case WPngImage::kIOStatus_Error_PNGLibraryError:
+    std::cerr &lt;&lt; "Error reading " &lt;&lt; filename;
+    if(!status.pngLibErrorMsg.empty());
+        std::cerr &lt;&lt; ": " &lt;&lt; status.pngLibErrorMsg;
+    std::cerr &lt;&lt; "\n";
+    break;
+
+ default: <span class="comment">/* image loaded ok */</span>
+}</pre>
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_properties">Image properties</h3>
+
+<p>Image dimensions:</p>
+
+<pre>int width() const;
+int height() const;</pre>
+
+<p>The original pixel format of the loaded PNG file (if one has been loaded):</p>
+
+<pre>PngFileFormat originalFileFormat() const;
+void setFileFormat(PngFileFormat);</pre>
+
+<p>Current pixel format properties:</p>
+
+<pre>PixelFormat currentPixelFormat() const;
+bool isGrayscalePixelFormat() const;
+bool isRGBAPixelFormat() const;
+bool is8BPCPixelFormat() const;
+bool is16BPCPixelFormat() const;
+bool isFloatPixelFormat() const;</pre>
+
+<p>Convert the current image to another pixel format:</p>
+
+<pre>void convertToPixelFormat(PixelFormat);</pre>
+
+<p>Note that this is a relatively heavy operation because it internally creates a new
+  image data and transfers all the pixels from the existing one to the new one (doing
+  the necessary conversion). However, if the current pixel format is already the one
+  specified, does nothing.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_pixels">Getting and setting pixels</h3>
+
+<pre>Pixel8 get8(int x, int y) const;
+Pixel16 get16(int x, int y) const;
+PixelF getF(int x, int y) const;
+
+void set(int x, int y, Pixel8);
+void set(int x, int y, Pixel16);
+void set(int x, int y, PixelF);</pre>
+
+<p>See the section <a href="#pixel_reference">Pixel reference</a> for details on the
+  pixel objects.</p>
+
+<p>The type of pixel requested or set does not need to match the current pixel format.
+  If it's different, then it will be internally converted to the appropriate format
+  when returning/assigning it. (Note that this will mean a loss of precision if the
+  target pixel type is of lower bit depth than the source pixel type.)</p>
+
+<p>There are no separate pixel objects for grayscale. If the current image uses a grayscale
+  pixel format, then getting a pixel will return one with all three components set to the
+  same grayscale value. When setting a pixel, if the color components are unequal, it will
+  be converted to grayscale using the <code>toGrayCIE()</code> function of the pixel object.</p>
+
+<p>If the specified coordinates are out of bounds, the getters will return a fully
+  transparent pixel, and the setters will do nothing.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_drawing_images">Drawing images</h3>
+
+<pre>void putImage(int destX, int destY, const WPngImage&amp;);
+void putImage(int destX, int destY, const WPngImage&amp;,
+              int srcX, int srcY, int srcWidth, int srcHeight);
+
+void drawImage(int destX, int destY, const WPngImage&amp;);
+void drawImage(int destX, int destY, const WPngImage&amp;,
+               int srcX, int srcY, int srcWidth, int srcHeight);</pre>
+
+<p>These functions will copy the pixels from a given image ("parameter image") to
+  this image, at the specified location. The coordinates <code>destX</code>, <code>destY</code>
+  specify where the upper-left corner of the parameter image will end up in this image
+  (so, for example, the coordinates <code>0, 0</code> will make the upper left corner of
+  the parameter image match with the upper left corner if this image.)</p>
+
+<p>The second versions of the these functions can be used to draw only a part of the
+  parameter image into this image. The additional parameters specify the sub-rectangle
+  within the parameter image to draw (with <code>srcX</code> and <code>srcY</code> specifying
+  the upper-left corner of the rectangle.) In this case the coordinates <code>destX</code>,
+  <code>destY</code> specify where the upper-left corner of the sub-rectangle will end up
+  in this image.</p>
+
+<p>It's ok if the parameter image ends up partially (or completely) out of bounds of this
+  image: Only the visible part will be drawn. It's also ok if the sub-rectangle parameters
+  are out of bounds of the parameter image (any pixels outside the parameter image will be
+  ignored.) Note that if the specified width or height is zero or negative, nothing will
+  be drawn.</p>
+
+<p>The difference between <code>putImage()</code> and <code>drawImage()</code> is that the
+  former will simply assign the parameter pixels to this image, overwriting the target pixels,
+  while the latter will mix the source and target pixels using alpha blending, effectively
+  drawing the parameter image on top of this image. This makes a difference if the parameter
+  image has pixels with non-full alphas.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_drawing_lines">Drawing lines</h3>
+
+<pre>void drawHorLine(int x, int y, int length, Pixel8);
+void drawHorLine(int x, int y, int length, Pixel16);
+void drawHorLine(int x, int y, int length, PixelF);
+void drawVertLine(int x, int y, int length, Pixel8);
+void drawVertLine(int x, int y, int length, Pixel16);
+void drawVertLine(int x, int y, int length, PixelF);</pre>
+
+<p>These are simple convenience functions to draw horizontal and vertical lines.</p>
+
+<p>It's ok if the line is partially (or completely) out of bounds. Only the parts that
+  end up inside this image will be drawn. It's also ok for the <code>length</code> parameter
+  to be negative. (It will be interpreted appropriately, ie. going left or up from the
+  starting coordinates.)</p>
+
+<p>The lines will be drawn onto this image using alpha blending. This makes a difference
+  if the specified pixel object has a non-full alpha.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_resize_canvas">Resize canvas</h3>
+
+<pre>void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight);
+void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, Pixel8);
+void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, Pixel16);
+void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, PixelF);</pre>
+
+<p>These functions can be used to resize the area of the current image. This will either
+  expand the image (by adding pixels of the specified color) or crop the image, depending
+  on the origin and size parameters.</p>
+
+<p>The new origin parameters specify where the new upper left corner, relative to the
+  current one, should be. If they are zero, the upper left corner will remain unchanged.
+  Negative values will expand the image towards the left and up respectively. Positive
+  values will crop the image from the left and top respectively. The new width and height
+  parameters will act likewise with the right and bottom edges.</p>
+
+<p>For example, this will expand the current image by 10 pixels on each side (putting
+  fully transparent pixels on those new extra areas):</p>
+
+<pre>image.resizeCanvas(-10, -10, image.width()+20, image.height()+20,
+                   WPngImage::Pixel8(0, 0, 0, 0));</pre>
+
+
+<!---------------------------------------------------------------------------->
+<h2 id="pixel_reference">Pixel reference</h2>
+<h3 id="pixel_types">Pixel types</h3>
+
+<p><code>WPngImage</code> defines three pixel object types:</p>
+
+<ul>
+  <li><code>WPngImage::Pixel8</code>: An 8-bits-per-channel RGBA pixel (4 bytes).
+    Component range: 0-255.</li>
+  <li><code>WPngImage::Pixel16</code>: A 16-bits-per-channel RGBA pixel (8 bytes).
+    Component range: 0-65535.</li>
+  <li><code>WPngImage::PixelF</code>: A floating point RGBA pixel (16 bytes). Unlimited range
+    (up to the limits of the <code>float</code> type.) The range from off to full (which is
+    used when converting to one of the integer pixels) is 0.0-1.0.</li>
+</ul>
+
+<p>Each of these three types act exactly the same and have all the same member variables
+  and functions. Their only difference is the type of the members: <code>std::uint8_t</code>,
+  <code>std::uint16_t</code> and <code>float</code>. They are collectively referred to as
+  "<code>Pixel_t</code>", and their component type as "<code>CT</code>", in the rest of this
+  document.</p>
+
+<p>They have four publicly accessible member variables: <code>r</code>, <code>g</code>,
+  <code>b</code>, and  <code>a</code>. The calling code is free to modify them if the
+  provided operations do not suffice.</p>
+
+<p>Consult the tutorial section <a href="#tutorial_pixel_formats_advantages">Advantages and
+    disadvantages of different pixel formats</a> for some tips on choosing which pixel type
+  to use for a given situation.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="pixel_constructors">Constructors</h3>
+
+<p>Each pixel type has a constructor taking up to four parameters of its correspondent type.
+  Their default values are zero for the color components, and full for the alpha component.
+  (Thus, usually, if the program does not care about the alpha component, it can construct
+  pixels using only the first three parameters, to specify red, green and blue).</p>
+
+<p>They also have two explicit constructors that take a pixel object of one of the other types.
+  The component values will be converted appropriately.</p>
+
+<p>When converting one of the integer pixels to <code>PixelF</code>, they will be converted
+  to the range 0.0-1.0. When converting in the other direction, any value outside of that
+  range will be clamped to the minimum/maximum values of the destination.</p>
+
+<p>Additionally, they have an explicit constructor for each of the color space struct types.
+  Consult the section <a href="#pixel_color_space_conversions">Color space conversions</a>
+  for more on this.</p>
+
+<p>Pixel values can also be set using these convenience functions:</p>
+
+<pre>void set(CT r, CT g, CT b);
+void set(CT r, CT g, CT b, CT a);
+void setG(CT v);
+void setG(CT v, CT a);</pre>
+
+<p>The last two functions are used to set the pixel to a given grayscale value (the value
+  is assigned to all three color components.)</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="pixel_arithmetic">Arithmetic operators</h3>
+
+<p>Each pixel type supports all four arithmetic operators, in binary and assignment forms
+  (<code>operator+</code>, <code>operator+=</code>, <code>operator-</code>, <code>operator-=</code>,
+  <code>operator*</code>, <code>operator*=</code>, <code>operator/</code>, <code>operator/=</code>)
+  with either a numeric type (<code>int</code> in the case of <code>Pixel8</code> and
+  <code>Pixel16</code>, and <code>float</code> in the case of <code>PixelF</code>) or another
+  pixel of the same type.</p>
+
+<p>Note that in the case of <code>Pixel8</code> and <code>Pixel16</code>, any operation that
+  would cause the result to go outside of their respective ranges will be clamped to the range
+  (ie. overflow will be clamped to the maximum value, underflow to zero.) With <code>PixelF</code>
+  there is no limit.</p>
+
+<p>In the case of <code>Pixel8</code> and <code>Pixel16</code>, dividing by zero will not cause
+  malfunction. Instead, the pixel color components will be set to full. In the case of
+  <code>PixelF</code>, no checking is done.</p>
+
+<h4>Arithmetic with numeric values</h4>
+
+<p>With binary arithmetic operators, the numeric value can be on the left or right hand side of the
+  operator. ("<code>pixel+10</code>" and "<code>10+pixel</code>" will have the same result.
+  On the other hand, "<code>pixel-10</code>" and "<code>10-pixel</code>" obviously will not.)</p>
+
+<p>The operation will be performed to each of the color components of the pixel.
+  The alpha component will be unmodified (because this is most often the desired behavior).</p>
+
+<p>Examples:</p>
+
+<pre>pixel16 = 65535 - pixel16; <span class="comment">// Inverts the pixel</span>
+pixelF = 1.0 - pixelF; <span class="comment">// Inverts the pixel</span>
+
+pixel16 *= 2; <span class="comment">// Doubles brightness</span>
+pixelF *= 1.2; <span class="comment">// Increases brightness by 20%</span></pre>
+
+<h4>Arithmetic between pixels</h4>
+
+<p>All the arithmetic operators are also supported with another pixel object of the same
+  type. The operation will be done for each pair of color components, but there is no
+  universally defined standard on how these operations should be performed
+  in terms of the alpha channel. This library chooses the option to <em>average</em> the
+  two alpha channels for the result (regardless of which operator is being applied). If this
+  is not the desired behavior, the application should modify the <code>r</code>, <code>g</code>,
+  <code>b</code> and <code>a</code> members directly instead.</p>
+
+<p>Example:</p>
+
+<pre><span class="comment">// Adds two pixels together. Their alpha will be averaged.</span>
+pixel1 += pixel2;</pre>
+
+<p>Note that these pixel types support proper (alpha-aware) averaging, as well as alpha
+  blending, of pixels. These are detailed in the section <a href="#pixel_other">Other
+    operations</a>.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="pixel_color_space_conversions">Color space conversions</h3>
+
+<p><code>WPngImage</code> supports a number of color space conversions for pixels. The class
+  defines the following structs, each for the correspondent color space:</p>
+
+<pre>struct WPngImage::HSV { Float h, s, v, a; };
+struct WPngImage::HSL { Float h, s, l, a; };
+struct WPngImage::XYZ { Float x, y, z, a; };
+struct WPngImage::YXY { Float Y, x, y, a; };
+struct WPngImage::CMY { Float c, m, y, a; };
+struct WPngImage::CMYK { Float c, m, y, k, a; };</pre>
+
+<p>The pixel classes define the following member functions to convert the pixel to the
+  correspondent color space:</p>
+
+<pre>HSV toHSV() const;
+HSL toHSL() const;
+XYZ toXYZ() const;
+YXY toYXY() const;
+CMY toCMY() const;
+CMYK toCMYK() const;</pre>
+
+<p>The conversion back to the RGBA pixel can be done by giving the color space struct
+  instance to its constructor (the pixel classes have an explicit constructor for each color
+  space struct), or by calling one of these member functions:</p>
+
+<pre>void set(const HSV&amp;);
+void setFromHSV(Float h, Float s, Float v);
+void setFromHSV(Float h, Float s, Float v, Float a);
+void set(const HSL&amp;);
+void setFromHSL(Float h, Float s, Float l);
+void setFromHSL(Float h, Float s, Float l, Float a);
+void set(const XYZ&amp;);
+void setFromXYZ(Float x, Float y, Float z);
+void setFromXYZ(Float x, Float y, Float z, Float a);
+void set(const YXY&amp;);
+void setFromYXY(Float Y, Float x, Float y);
+void setFromYXY(Float Y, Float x, Float y, Float a);
+void set(const CMY&amp;);
+void setFromCMY(Float c, Float m, Float y);
+void setFromCMY(Float c, Float m, Float y, Float a);
+void set(const CMYK&amp;);
+void setFromCMYK(Float c, Float m, Float y, Float k);
+void setFromCMYK(Float c, Float m, Float y, Float k, Float a);</pre>
+
+<!---------------------------------------------------------------------------->
+<h3 id="pixel_other">Other operations</h3>
+
+<h4>Alpha blending</h4>
+
+<pre>void blendWith(const Pixel_t&amp; src);
+Pixel_t blendedPixel(const Pixel_t&amp; src) const;</pre>
+
+<p>Mixes two pixels by alpha-blending the pixel given as parameter on top of this pixel.</p>
+
+<h4>Averaging pixels</h4>
+
+<pre>void averageWith(const Pixel_t&amp;);
+
+Pixel_t averagedPixel(const Pixel_t&amp;) const;
+
+void averageWith(const Pixel_t*, std::size_t amount);
+
+Pixel_t averagedPixel(const Pixel_t*, std::size_t amount) const;
+
+template&lt;typename... Rest&gt;
+void averageWith(const Pixel_t&amp;, Rest&amp;&amp;...);
+
+template&lt;typename... Rest&gt;
+Pixel_t averagedPixel(const Pixel_t&amp;, Rest&amp;&amp;...) const;</pre>
+
+<p>Performs proper (alpha-aware) averaging of pixels. (In other words, calculates the
+  weighted average of the pixel color components, using their alphas as the weight factors.
+  The alphas themselves are averaged.)</p>
+
+<p>The variadic template versions can take any amount of parameters (of the same pixel
+  type), and are only available when compiling in C++11 mode.</p>
+
+<p>Examples</p>
+
+<pre>WPngImage::PixelF average1 = pixel1.averagedPixel(pixel2);
+WPngImage::PixelF average2 = pixel1.averagedPixel(pixel2, pixel3, pixel4);</pre>
+
+<h4>Converting to grayscale (simple)</h4>
+
+<p><code>Pixel8</code> and <code>Pixel16</code>:</p>
+
+<pre>CT toGray(Int32 rWeight = 299, Int32 gWeight = 587, Int32 bWeight = 114) const;
+Pixel_t grayPixel(Int32 rWeight = 299, Int32 gWeight = 587, Int32 bWeight = 114) const;</pre>
+
+<p><code>PixelF</code>:</p>
+
+<pre>Float toGray(Float rWeight = 0.299f, Float gWeight = 0.587f, Float bWeight = 0.114f) const;
+PixelF grayPixel(Float rWeight = 0.299f, Float gWeight = 0.587f, Float bWeight = 0.114f) const;</pre>
+
+<p>These perform a simplistic conversion to grayscale using a weight value for each color
+  component. To use different weights than the defaults, specify them as parameters.</p>
+
+<h4>Converting to grayscale (CIE)</h4>
+
+<pre>CT toGrayCIE() const;
+Pixel_t grayCIEPixel() const;</pre>
+
+<p>These perform a colorimetric (luminance-preserving) conversion to grayscale, as defined
+  by the CIE 1931 standard. This is a more complicated (and thus slightly heavier) conversion
+  than the simpler weighted-average one, but is more accurate.</p>
+
+</body></html>
