@@ -10,3 +10,42 @@ WPngImage also supports decoding and encoding PNG images from/to memory (a featu
 By default WPngImage uses C++11 for some convenience functionality and efficiency (eg. it implements a move constructor and assignment operator). The class can be compiled in C++98 mode if necessary, though.
 
 Consult the WPngImage.html file for a tutorial and full reference documentation.
+
+## Simple examples
+
+Create a 256x256 image with a red-green gradient, and save it to a PNG file:
+
+```c++
+#include "WPngImage.hh"
+
+int main()
+{
+    WPngImage image(256, 256);
+
+    for(int y = 0; y < image.height(); ++y)
+        for(int x = 0; x < image.width(); ++x)
+            image.set(x, y, WPngImage::Pixel8(x, y, 0));
+
+    image.saveImage("example.png");
+}
+```
+
+Load a PNG file, invert it (ie. calculate its negative), and save it to another file:
+
+```c++
+WPngImage image;
+auto status = image.loadImage("photo.png");
+
+if(status != WPngImage::kIOStatus_Ok)
+{ /* handle error */ }
+else
+{
+    for(int y = 0; y < image.height(); ++y)
+        for(int x = 0; x < image.width(); ++x)
+            image.set(x, y, 65535 - image.get16(x, y));
+
+    image.saveImage("photo_negative.png");
+}
+```
+
+(Note that in this example the original bit depth and color space (ie. rgb or gray) will be automatically preserved. These can be changed when loading or when saving, if needed.)
