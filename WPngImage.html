@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage documentation</title>
+  <title>WPngImage 1.0.1 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -79,7 +79,7 @@ code
 </head>
 
 <body>
-<h1>WPngImage documentation</h1>
+<h1>WPngImage 1.0.1 documentation</h1>
 
 <p><code>WPngImage</code> is a C++ wrapper class around the
   <a href="http://www.libpng.org/">libpng</a> library.</p>
@@ -978,6 +978,9 @@ void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, P
   <code>b</code>, and  <code>a</code>. The calling code is free to modify them if the
   provided operations do not suffice.</p>
 
+<p>They also have a typedef named <code>Component_t</code> equal to the correspondent component
+  type of the class.</p>
+
 <p>Consult the tutorial section <a href="#tutorial_pixel_formats_advantages">Advantages and
     disadvantages of different pixel formats</a> for some tips on choosing which pixel type
   to use for a given situation.</p>
@@ -985,13 +988,31 @@ void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, P
 <!---------------------------------------------------------------------------->
 <h3 id="pixel_constructors">Constructors</h3>
 
-<p>Each pixel type has a constructor taking up to four parameters of its correspondent type.
-  Their default values are zero for the color components, and full for the alpha component.
-  (Thus, usually, if the program does not care about the alpha component, it can construct
-  pixels using only the first three parameters, to specify red, green and blue).</p>
+<p>Each pixel type has these five constructors:</p>
+
+<pre>Pixel_t();
+explicit Pixel_t(CT gray);
+Pixel_t(CT gray, CT alpha);
+Pixel_t(CT red, CT green, CT blue);
+Pixel_t(CT red, CT green, CT blue, CT alpha);</pre>
+
+<ol>
+  <li>Black with full alpha.</li>
+  <li>Assigns the parameter to all three color components. Full alpha.</li>
+  <li>Assigns the first parameter to all three color components, and the second to the alpha
+    component.</li>
+  <li>Assigns the three parameters to the three color components. Full alpha.</li>
+  <li>Assigns the four parameters to all four components.</li>
+</ol>
 
 <p>They also have two explicit constructors that take a pixel object of one of the other types.
-  The component values will be converted appropriately.</p>
+  The component values will be converted appropriately. For example, <code>Pixel8</code> has
+  the following constructors:</p>
+
+<pre>explicit Pixel8(Pixel16);
+explicit Pixel8(PixelF);</pre>
+
+<p>The other two pixel classes have correspondent constructors.
 
 <p>When converting one of the integer pixels to <code>PixelF</code>, they will be converted
   to the range 0.0-1.0. When converting in the other direction, any value outside of that
@@ -1001,15 +1022,22 @@ void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, P
   Consult the section <a href="#pixel_color_space_conversions">Color space conversions</a>
   for more on this.</p>
 
-<p>Pixel values can also be set using these convenience functions:</p>
+<pre>explicit Pixel_t(const HSV&);
+explicit Pixel_t(const HSL&);
+explicit Pixel_t(const XYZ&);
+explicit Pixel_t(const YXY&);
+explicit Pixel_t(const CMY&);
+explicit Pixel_t(const CMYK&);</pre>
 
-<pre>void set(CT r, CT g, CT b);
-void set(CT r, CT g, CT b, CT a);
-void setG(CT v);
-void setG(CT v, CT a);</pre>
+<p>Pixel values can also be set using these convenience functions. They are equivalent
+  to the constructors, except that the versions not taking an alpha value will leave
+  the current alpha value unmodified.</p>
 
-<p>The last two functions are used to set the pixel to a given grayscale value (the value
-  is assigned to all three color components.)</p>
+<pre>void set(CT gray);
+void set(CT gray, CT alpha);
+void set(CT red, CT green, CT blue);
+void set(CT red, CT green, CT blue, CT alpha);</pre>
+
 
 <!---------------------------------------------------------------------------->
 <h3 id="pixel_arithmetic">Arithmetic operators</h3>

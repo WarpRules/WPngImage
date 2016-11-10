@@ -27,8 +27,8 @@
 #endif
 #endif
 
-#define WPNGIMAGE_VERSION 0x010000
-#define WPNGIMAGE_VERSION_STRING "1.0.0"
+#define WPNGIMAGE_VERSION 0x010001
+#define WPNGIMAGE_VERSION_STRING "1.0.1"
 #define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2016 Juha Nieminen"
 
 
@@ -290,8 +290,7 @@ struct WPngImage::Pixel
     CT r, g, b, a;
 
     Pixel(CT red, CT green, CT blue, CT alpha):
-        r(red), g(green), b(blue), a(alpha)
-    {}
+        r(red), g(green), b(blue), a(alpha) {}
 
     bool operator==(const Pixel_t&) const;
     bool operator!=(const Pixel_t&) const;
@@ -314,10 +313,10 @@ struct WPngImage::Pixel
     Pixel_t& operator/=(const Pixel_t&);
     Pixel_t operator/(const Pixel_t&) const;
 
+    void set(CT v) { r=v; g=v; b=v; }
+    void set(CT v, CT iA) { r=v; g=v; b=v; a=iA; }
     void set(CT iR, CT iG, CT iB) { r=iR; g=iG; b=iB; }
     void set(CT iR, CT iG, CT iB, CT iA) { r=iR; g=iG; b=iB; a=iA; }
-    void setG(CT v) { r=v; g=v; b=v; }
-    void setG(CT v, CT iA) { r=v; g=v; b=v; a=iA; }
 
     HSV toHSV() const;
     void set(const HSV&);
@@ -387,9 +386,11 @@ struct WPngImage::Pixel8: public WPngImage::IPixel<Pixel8, Byte>
 {
     static const Byte kComponentMaxValue = ~Byte(0);
 
-    Pixel8(Byte red = 0, Byte green = 0, Byte blue = 0, Byte alpha = kComponentMaxValue):
-        IPixel(red, green, blue, alpha)
-    {}
+    Pixel8(): IPixel(0, 0, 0, kComponentMaxValue) {}
+    explicit Pixel8(Byte gray): IPixel(gray, gray, gray, kComponentMaxValue) {}
+    Pixel8(Byte gray, Byte alpha): IPixel(gray, gray, gray, alpha) {}
+    Pixel8(Byte red, Byte green, Byte blue): IPixel(red, green, blue, kComponentMaxValue) {}
+    Pixel8(Byte red, Byte green, Byte blue, Byte alpha): IPixel(red, green, blue, alpha) {}
 
     explicit Pixel8(Pixel16);
     explicit Pixel8(PixelF);
@@ -419,10 +420,11 @@ struct WPngImage::Pixel16: public WPngImage::IPixel<Pixel16, UInt16>
 {
     static const UInt16 kComponentMaxValue = ~UInt16(0);
 
-    Pixel16(UInt16 red = 0, UInt16 green = 0, UInt16 blue = 0,
-            UInt16 alpha = kComponentMaxValue):
-        IPixel(red, green, blue, alpha)
-    {}
+    Pixel16(): IPixel(0, 0, 0, kComponentMaxValue) {}
+    explicit Pixel16(UInt16 gray): IPixel(gray, gray, gray, kComponentMaxValue) {}
+    Pixel16(UInt16 gray, UInt16 alpha): IPixel(gray, gray, gray, alpha) {}
+    Pixel16(UInt16 red, UInt16 green, UInt16 blue): IPixel(red, green, blue, kComponentMaxValue) {}
+    Pixel16(UInt16 red, UInt16 green, UInt16 blue, UInt16 alpha): IPixel(red, green, blue, alpha) {}
 
     explicit Pixel16(Pixel8);
     explicit Pixel16(PixelF);
@@ -450,9 +452,11 @@ WPngImage::Pixel16 operator/(WPngImage::Int32, const WPngImage::Pixel16&);
 //============================================================================
 struct WPngImage::PixelF: public WPngImage::Pixel<PixelF, Float, Float>
 {
-    PixelF(Float red = 0, Float green = 0, Float blue = 0, Float alpha = 1.0f):
-        Pixel(red, green, blue, alpha)
-    {}
+    PixelF(): Pixel(0, 0, 0, 1.0f) {}
+    explicit PixelF(Float gray): Pixel(gray, gray, gray, 1.0f) {}
+    PixelF(Float gray, Float alpha): Pixel(gray, gray, gray, alpha) {}
+    PixelF(Float red, Float green, Float blue): Pixel(red, green, blue, 1.0f) {}
+    PixelF(Float red, Float green, Float blue, Float alpha): Pixel(red, green, blue, alpha) {}
 
     explicit PixelF(Pixel8);
     explicit PixelF(Pixel16);
