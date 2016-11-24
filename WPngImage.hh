@@ -177,23 +177,26 @@ class WPngImage
     //------------------------------------------------------------------------
     // Image writing
     //------------------------------------------------------------------------
-    IOStatus saveImage(const char* fileName, PngWriteConvert = kPngWriteConvert_original);
-    IOStatus saveImage(const char* fileName, PngFileFormat);
+    IOStatus saveImage(const char* fileName,
+                       PngWriteConvert = kPngWriteConvert_original) const;
+    IOStatus saveImage(const char* fileName, PngFileFormat) const;
 
-    IOStatus saveImage(const std::string& fileName, PngWriteConvert = kPngWriteConvert_original);
-    IOStatus saveImage(const std::string& fileName, PngFileFormat);
+    IOStatus saveImage(const std::string& fileName,
+                       PngWriteConvert = kPngWriteConvert_original) const;
+    IOStatus saveImage(const std::string& fileName, PngFileFormat) const;
 
     IOStatus saveImageToRAM(std::vector<unsigned char>& dest,
-                            PngWriteConvert = kPngWriteConvert_original);
-    IOStatus saveImageToRAM(std::vector<unsigned char>& dest, PngFileFormat);
+                            PngWriteConvert = kPngWriteConvert_original) const;
+    IOStatus saveImageToRAM(std::vector<unsigned char>& dest, PngFileFormat) const;
 
 #if WPNGIMAGE_RESTRICT_TO_CPP98
     typedef void(*ByteStreamOutputFunc)(const unsigned char*, std::size_t);
 #else
     using ByteStreamOutputFunc = std::function<void(const unsigned char*, std::size_t)>;
 #endif
-    IOStatus saveImageToRAM(ByteStreamOutputFunc, PngWriteConvert = kPngWriteConvert_original);
-    IOStatus saveImageToRAM(ByteStreamOutputFunc, PngFileFormat);
+    IOStatus saveImageToRAM(ByteStreamOutputFunc,
+                            PngWriteConvert = kPngWriteConvert_original) const;
+    IOStatus saveImageToRAM(ByteStreamOutputFunc, PngFileFormat) const;
 
 
     //------------------------------------------------------------------------
@@ -267,15 +270,24 @@ class WPngImage
     template<typename Pixel_t> void blendHorLine(int, int, int, const Pixel_t&);
     template<typename Pixel_t> void blendVertLine(int, int, int, const Pixel_t&);
 
+    static PixelFormat getPixelFormat(PngReadConvert, PngFileFormat);
+    static PngFileFormat getClosestMatchFileFormat(PixelFormat);
+    static PngFileFormat getFileFormat(PngWriteConvert, PngFileFormat, PixelFormat);
+    bool allPixelsHaveFullAlpha() const;
+    void setPixel(std::size_t, const Pixel8&);
+    void setPixel(std::size_t, const Pixel16&);
+    void setPixelRow(PngFileFormat, int, Byte*, int) const;
+    void setPixelRow(PngFileFormat, int, UInt16*, int) const;
+
     struct PngStructs;
     IOStatus readPngData(PngStructs&, bool, PngReadConvert, PixelFormat);
     IOStatus performLoadImage(const char*, bool, PngReadConvert, PixelFormat);
     IOStatus performLoadImageFromRAM(const void*, std::size_t, bool, PngReadConvert, PixelFormat);
-    IOStatus writePngData(PngStructs&, PngFileFormat);
-    template<typename Pixel_t>
-    void performWritePngData(PngStructs&, int, int, int, Pixel_t(PngDataBase::*)(std::size_t)const);
+    IOStatus writePngData(PngStructs&, PngFileFormat) const;
+    template<typename CT>
+    void performWritePngData(PngStructs&, PngFileFormat, int, int, int) const;
     IOStatus performSaveImageToRAM
-    (std::vector<unsigned char>*, ByteStreamOutputFunc, PngFileFormat);
+    (std::vector<unsigned char>*, ByteStreamOutputFunc, PngFileFormat) const;
 };
 
 
