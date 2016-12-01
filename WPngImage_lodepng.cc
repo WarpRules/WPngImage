@@ -44,6 +44,13 @@ namespace
         return ((WPngImage::UInt16(rawImageData[index]) << 8) |
                 WPngImage::UInt16(rawImageData[index + 1]));
     }
+
+    inline void setPNGComponent16
+    (std::vector<unsigned char>& rawImageData, std::size_t index, WPngImage::UInt16 value)
+    {
+        rawImageData[index] = (unsigned char)(value >> 8);
+        rawImageData[index + 1] = (unsigned char)value;
+    }
 }
 
 
@@ -138,8 +145,19 @@ WPngImage::IOStatus WPngImage::performLoadImageFromRAM
 //----------------------------------------------------------------------------
 // Save PNG image to file
 //----------------------------------------------------------------------------
-WPngImage::IOStatus WPngImage::saveImage(const char*, PngFileFormat) const
+WPngImage::IOStatus WPngImage::saveImage(const char* fileName, PngFileFormat fileFormat) const
 {
+    if(!mData) return kIOStatus_Ok;
+
+    FilePtr oFile;
+    oFile.fp = std::fopen(fileName, "wb");
+    if(!oFile.fp) return kIOStatus_Error_CantOpenFile;
+
+    std::vector<unsigned char> buffer;
+    const IOStatus status = performSaveImageToRAM(&buffer, 0, fileFormat);
+    if(status != kIOStatus_Ok) return status;
+
+    std::fwrite(&buffer[0], 1, buffer.size(), oFile.fp);
     return kIOStatus_Ok;
 }
 
@@ -148,10 +166,73 @@ WPngImage::IOStatus WPngImage::saveImage(const char*, PngFileFormat) const
 // Write PNG data to RAM
 //----------------------------------------------------------------------------
 WPngImage::IOStatus WPngImage::performSaveImageToRAM
-(std::vector<unsigned char>*, ByteStreamOutputFunc,
- PngFileFormat) const
+(std::vector<unsigned char>* destVector, ByteStreamOutputFunc destFunc,
+ PngFileFormat fileFormat) const
 {
     if(!mData) return kIOStatus_Ok;
+
+    if(fileFormat == kPngFileFormat_none)
+        fileFormat = getClosestMatchFileFormat(currentPixelFormat());
+
+    unsigned bitDepth = 8, bytesPerComponent = 1;
+    LodePNGColorType colorType = LCT_RGBA;
+    int colorComponents = 4;
+    const bool writeAlphas = !allPixelsHaveFullAlpha();
+
+    switch(fileFormat)
+    {
+      case kPngFileFormat_GA16:
+          bitDepth = 16;
+          bytesPerComponent = 2;
+
+      case kPngFileFormat_GA8:
+          colorType = writeAlphas ? LCT_GREY_ALPHA : LCT_GREY;
+          colorComponents = writeAlphas ? 2 : 1;
+          break;
+
+      case kPngFileFormat_RGBA16:
+          bitDepth = 16;
+          bytesPerComponent = 2;
+
+      case kPngFileFormat_none:
+      case kPngFileFormat_RGBA8:
+          colorType = writeAlphas ? LCT_RGBA : LCT_RGB;
+          colorComponents = writeAlphas ? 4 : 3;
+          break;
+    }
+
+    const unsigned imageWidth = unsigned(width()), imageHeight = unsigned(height());
+    const unsigned rowSize = imageWidth * colorComponents * bytesPerComponent;
+    std::vector<unsigned char> rawImageData(imageHeight * rowSize);
+
+    if(bytesPerComponent == 1)
+    {
+        for(unsigned y = 0, index = 0; y < imageHeight; ++y, index += rowSize)
+            setPixelRow(fileFormat, y, &rawImageData[index], colorComponents);
+    }
+    else
+    {
+        std::vector<UInt16> rowBuffer(imageWidth * colorComponents);
+        for(unsigned y = 0, rowIndex = 0; y < imageHeight; ++y, rowIndex += rowSize)
+        {
+            setPixelRow(fileFormat, y, &rowBuffer[0], colorComponents);
+
+            for(unsigned colIndex = 0; colIndex < rowBuffer.size(); ++colIndex)
+                setPNGComponent16(rawImageData, rowIndex + colIndex * 2, rowBuffer[colIndex]);
+        }
+    }
+
+    std::vector<unsigned char> buffer;
+    if(!destVector) destVector = &buffer;
+
+    unsigned errorCode = lodepng::encode(*destVector, rawImageData, imageWidth, imageHeight,
+                                         colorType, bitDepth);
+
+    if(errorCode != 0)
+        return IOStatus(kIOStatus_Error_PNGLibraryError, lodepng_error_text(errorCode));
+
+    if(destFunc)
+        destFunc(&(*destVector)[0], destVector->size());
 
     return kIOStatus_Ok;
 }
