@@ -16,6 +16,7 @@
 #define WPNGIMAGE_DELETED
 #endif
 
+const bool WPngImage::isUsingLibpng = true;
 
 //============================================================================
 // Auxiliary functions for reading PNG data
@@ -259,7 +260,6 @@ WPngImage::IOStatus WPngImage::performLoadImageFromRAM
 //============================================================================
 // Write PNG data
 //============================================================================
-template<typename CT>
 void WPngImage::performWritePngData
 (PngStructs& structs, PngFileFormat fileFormat,
  int bitDepth, int colorType, int colorComponents) const
@@ -271,10 +271,9 @@ void WPngImage::performWritePngData
                  PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
     png_write_info(structs.mPngStructPtr, structs.mPngInfoPtr);
 
-    std::vector<CT> rowData(imageWidth * colorComponents);
-
     if(bitDepth == 16)
     {
+        std::vector<UInt16> rowData(imageWidth * colorComponents);
         std::vector<unsigned char> rowDataBytes(rowData.size() * 2);
         for(int y = 0; y < imageHeight; ++y)
         {
@@ -286,6 +285,7 @@ void WPngImage::performWritePngData
     }
     else
     {
+        std::vector<Byte> rowData(imageWidth * colorComponents);
         for(int y = 0; y < imageHeight; ++y)
         {
             setPixelRow(fileFormat, y, &rowData[0], colorComponents);
@@ -303,14 +303,14 @@ WPngImage::IOStatus WPngImage::writePngData(PngStructs& structs, PngFileFormat f
     switch(fileFormat)
     {
       case kPngFileFormat_GA8:
-          performWritePngData<Byte>
+          performWritePngData
               (structs, fileFormat, 8,
                writeAlphas ? PNG_COLOR_TYPE_GRAY_ALPHA : PNG_COLOR_TYPE_GRAY,
                writeAlphas ? 2 : 1);
           break;
 
       case kPngFileFormat_GA16:
-          performWritePngData<UInt16>
+          performWritePngData
               (structs, fileFormat, 16,
                writeAlphas ? PNG_COLOR_TYPE_GRAY_ALPHA : PNG_COLOR_TYPE_GRAY,
                writeAlphas ? 2 : 1);
@@ -318,14 +318,14 @@ WPngImage::IOStatus WPngImage::writePngData(PngStructs& structs, PngFileFormat f
 
       case kPngFileFormat_none:
       case kPngFileFormat_RGBA8:
-          performWritePngData<Byte>
+          performWritePngData
               (structs, fileFormat, 8,
                writeAlphas ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB,
                writeAlphas ? 4 : 3);
           break;
 
       case kPngFileFormat_RGBA16:
-          performWritePngData<UInt16>
+          performWritePngData
               (structs, fileFormat, 16,
                writeAlphas ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB,
                writeAlphas ? 4 : 3);

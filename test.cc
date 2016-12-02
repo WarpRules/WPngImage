@@ -20,6 +20,8 @@ typedef WPngImage::Byte Byte;
 typedef WPngImage::UInt16 UInt16;
 typedef WPngImage::Float Float;
 
+static const char* const kTestPngImageFileName = "WPngImage_testing.png";
+
 //============================================================================
 // Pixel and color ostream output operators
 //============================================================================
@@ -1678,6 +1680,226 @@ static bool loadPngDataFromRAM
 }
 
 //----------------------------------------------------------------------------
+// Write PNG data
+//----------------------------------------------------------------------------
+template<typename CT, typename Pixel_t>
+static void setColorComponentsG(CT* dest, int colorComponents, const Pixel_t& pixel)
+{
+    dest[0] = pixel.toGrayCIE();
+    if(colorComponents > 1) dest[1] = pixel.a;
+}
+
+template<typename CT, typename Pixel_t>
+static void setColorComponents(CT* dest, int colorComponents, const Pixel_t& pixel)
+{
+    dest[0] = pixel.r;
+    dest[1] = pixel.g;
+    dest[2] = pixel.b;
+    if(colorComponents > 3) dest[3] = pixel.a;
+}
+
+static void setPixelRow(const WPngImage& image, WPngImage::PngFileFormat fileFormat,
+                        int y, Byte* dest, int colorComponents)
+{
+    switch(fileFormat)
+    {
+      case WPngImage::kPngFileFormat_GA8:
+          for(int x = 0; x < image.width(); ++x)
+              setColorComponentsG(dest + (x * colorComponents), colorComponents,
+                                  image.get8(x, y));
+          break;
+
+      case WPngImage::kPngFileFormat_RGBA8:
+          for(int x = 0; x < image.width(); ++x)
+              setColorComponents(dest + (x * colorComponents), colorComponents,
+                                 image.get8(x, y));
+          break;
+
+      default: break;
+    }
+}
+
+static void setPixelRow(const WPngImage& image, WPngImage::PngFileFormat fileFormat,
+                        int y, UInt16* dest, int colorComponents)
+{
+    switch(fileFormat)
+    {
+      case WPngImage::kPngFileFormat_GA16:
+          for(int x = 0; x < image.width(); ++x)
+              setColorComponentsG(dest + (x * colorComponents), colorComponents,
+                                  image.get16(x, y));
+          break;
+
+      case WPngImage::kPngFileFormat_RGBA16:
+          for(int x = 0; x < image.width(); ++x)
+              setColorComponents(dest + (x * colorComponents), colorComponents,
+                                 image.get16(x, y));
+          break;
+
+      default: break;
+    }
+}
+
+static void performWritePngData
+(const WPngImage& image, PngStructs& structs, WPngImage::PngFileFormat fileFormat,
+ int bitDepth, int colorType, int colorComponents)
+{
+    const int imageWidth = image.width(), imageHeight = image.height();
+
+    png_set_IHDR(structs.mPngStructPtr, structs.mPngInfoPtr, imageWidth, imageHeight,
+                 bitDepth, colorType, PNG_INTERLACE_NONE,
+                 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    png_write_info(structs.mPngStructPtr, structs.mPngInfoPtr);
+
+    if(bitDepth == 16)
+    {
+        std::vector<UInt16> rowData(imageWidth * colorComponents);
+        std::vector<unsigned char> rowDataBytes(rowData.size() * 2);
+        for(int y = 0; y < imageHeight; ++y)
+        {
+            setPixelRow(image, fileFormat, y, &rowData[0], colorComponents);
+            for(std::size_t i = 0; i < rowData.size(); ++i)
+                setPNGComponent16(rowDataBytes, i * 2, rowData[i]);
+            png_write_row(structs.mPngStructPtr, (png_bytep)(&rowDataBytes[0]));
+        }
+    }
+    else
+    {
+        std::vector<Byte> rowData(imageWidth * colorComponents);
+        for(int y = 0; y < imageHeight; ++y)
+        {
+            setPixelRow(image, fileFormat, y, &rowData[0], colorComponents);
+            png_write_row(structs.mPngStructPtr, (png_bytep)(&rowData[0]));
+        }
+    }
+
+    png_write_end(structs.mPngStructPtr, structs.mPngInfoPtr);
+}
+
+static void writePngData(const WPngImage& image, PngStructs& structs,
+                         WPngImage::PngFileFormat fileFormat)
+{
+    const bool writeAlphas = !image.allPixelsHaveFullAlpha();
+
+    switch(fileFormat)
+    {
+      case WPngImage::kPngFileFormat_GA8:
+          performWritePngData
+              (image, structs, fileFormat, 8,
+               writeAlphas ? PNG_COLOR_TYPE_GRAY_ALPHA : PNG_COLOR_TYPE_GRAY,
+               writeAlphas ? 2 : 1);
+          break;
+
+      case WPngImage::kPngFileFormat_GA16:
+          performWritePngData
+              (image, structs, fileFormat, 16,
+               writeAlphas ? PNG_COLOR_TYPE_GRAY_ALPHA : PNG_COLOR_TYPE_GRAY,
+               writeAlphas ? 2 : 1);
+          break;
+
+      case WPngImage::kPngFileFormat_none:
+      case WPngImage::kPngFileFormat_RGBA8:
+          performWritePngData
+              (image, structs, fileFormat, 8,
+               writeAlphas ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB,
+               writeAlphas ? 4 : 3);
+          break;
+
+      case WPngImage::kPngFileFormat_RGBA16:
+          performWritePngData
+              (image, structs, fileFormat, 16,
+               writeAlphas ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB,
+               writeAlphas ? 4 : 3);
+          break;
+    }
+}
+
+
+//----------------------------------------------------------------------------
+// Save PNG image to file
+//----------------------------------------------------------------------------
+bool savePngDataToFile(const WPngImage& image, const char* fileName,
+                       WPngImage::PngFileFormat fileFormat)
+{
+    FilePtr oFile;
+    oFile.fp = std::fopen(fileName, "wb");
+    if(!oFile.fp) { std::perror(fileName); ERRORRET; }
+
+    PngStructs structs(false);
+    if(!structs.mPngInfoPtr)
+    {
+        std::cout << "Failed to initialize info_ptr\n";
+        ERRORRET;
+    }
+
+    if(setjmp(png_jmpbuf(structs.mPngStructPtr)))
+    {
+        std::cout << "libpng returned an error: \""
+                  << structs.mPngLibErrorMsg << "\"\n";
+        ERRORRET;
+    }
+
+    png_init_io(structs.mPngStructPtr, oFile.fp);
+
+    writePngData(image, structs, fileFormat);
+    return true;
+}
+
+
+//----------------------------------------------------------------------------
+// Write PNG data to RAM
+//----------------------------------------------------------------------------
+namespace
+{
+    struct PngDestData
+    {
+        std::vector<unsigned char>* destVector;
+        WPngImage::ByteStreamOutputFunc destFunc;
+        PngDestData(): destVector(0), destFunc(0) {}
+        PngDestData(const PngDestData&);
+        PngDestData& operator=(const PngDestData&);
+    };
+}
+
+static void pngDataWriter(png_structp png_ptr, png_bytep data, png_size_t length)
+{
+    PngDestData* obj = reinterpret_cast<PngDestData*>(png_get_io_ptr(png_ptr));
+    if(obj->destVector) obj->destVector->insert(obj->destVector->end(), data, data + length);
+    if(obj->destFunc) obj->destFunc((const unsigned char*)data, length);
+}
+
+static void pngDataFlush(png_structp)
+{}
+
+static bool savePngDataToRAM
+(const WPngImage& image,
+ std::vector<unsigned char>* destVector, WPngImage::ByteStreamOutputFunc destFunc,
+ WPngImage::PngFileFormat fileFormat)
+{
+    PngStructs structs(false);
+    if(!structs.mPngInfoPtr)
+    {
+        std::cout << "Failed to initialize info_ptr\n";
+        ERRORRET;
+    }
+
+    if(setjmp(png_jmpbuf(structs.mPngStructPtr)))
+    {
+        std::cout << "libpng returned an error: \""
+                  << structs.mPngLibErrorMsg << "\"\n";
+        ERRORRET;
+    }
+
+    PngDestData destData;
+    destData.destVector = destVector;
+    destData.destFunc = destFunc;
+
+    png_set_write_fn(structs.mPngStructPtr, &destData, &pngDataWriter, &pngDataFlush);
+    writePngData(image, structs, fileFormat);
+    return true;
+}
+
+//----------------------------------------------------------------------------
 // Check against libpng
 //----------------------------------------------------------------------------
 static bool loadImageFileWithLibpngAndCompare(const char* fileName, const WPngImage& image)
@@ -1822,14 +2044,14 @@ static bool testSavingAndLoading(WPngImage::PixelFormat pixelFormat,
             }
     }
 
-    if(!checkIOStatus(image.saveImage("WPngImage_testing.png", fileFormat), true)) ERRORRET;
+    if(!checkIOStatus(image.saveImage(kTestPngImageFileName, fileFormat), true)) ERRORRET;
 
     WPngImage image2;
-    if(!checkIOStatus(image2.loadImage("WPngImage_testing.png", pixelFormat), false)) ERRORRET;
+    if(!checkIOStatus(image2.loadImage(kTestPngImageFileName, pixelFormat), false)) ERRORRET;
     if(!checkLoadedImage<Pixel_t>(image2, pixelFormat, fileFormat, width, height, maxValue,
                                   getPixelFunc)) ERRORRET;
 
-    std::FILE* iFile = std::fopen("WPngImage_testing.png", "rb");
+    std::FILE* iFile = std::fopen(kTestPngImageFileName, "rb");
     if(!iFile)
     {
         const char* errorString = std::strerror(errno);
@@ -1872,8 +2094,23 @@ static bool testSavingAndLoading(WPngImage::PixelFormat pixelFormat,
 #endif
 
 #ifdef TEST_AGAINST_LIBPNG
-    if(!loadImageFileWithLibpngAndCompare("WPngImage_testing.png", image)) ERRORRET;
+    if(!loadImageFileWithLibpngAndCompare(kTestPngImageFileName, image)) ERRORRET;
     if(!loadImageFromRAMWithLibpngAndCompare(&buffer[0], buffer.size(), image)) ERRORRET;
+
+    std::remove(kTestPngImageFileName);
+    if(!savePngDataToFile(image, kTestPngImageFileName, fileFormat)) ERRORRET;
+    WPngImage image6;
+    if(!checkIOStatus(image6.loadImage(kTestPngImageFileName, pixelFormat), false)) ERRORRET;
+    if(!checkLoadedImage<Pixel_t>(image6, pixelFormat, fileFormat, width, height, maxValue,
+                                  getPixelFunc)) ERRORRET;
+
+    buffer.clear();
+    savePngDataToRAM(image, &buffer, 0, fileFormat);
+    WPngImage image7;
+    if(!checkIOStatus(image7.loadImageFromRAM(&buffer[0], buffer.size(), pixelFormat), false))
+        ERRORRET;
+    if(!checkLoadedImage<Pixel_t>(image7, pixelFormat, fileFormat, width, height, maxValue,
+                                  getPixelFunc)) ERRORRET;
 #endif
     return true;
 }
@@ -1929,6 +2166,22 @@ static bool testSavingAndLoading()
 //============================================================================
 int main()
 {
+    std::cout << "WPngImage v" WPNGIMAGE_VERSION_STRING ". Using libpng: "
+              << (WPngImage::isUsingLibpng ? "yes" : "no")
+              << ". Testing against libpng: "
+#ifdef TEST_AGAINST_LIBPNG
+              << "yes"
+#else
+              << "no"
+#endif
+              << ". Restrict to C++98: "
+#if WPNGIMAGE_RESTRICT_TO_CPP98
+              << "yes"
+#else
+              << "no"
+#endif
+              << "\n";
+
     if(!testPixelConstruction()) ERRORRET1;
     if(!testPixelOperators1<WPngImage::Pixel8>()) ERRORRET1;
     if(!testPixelOperators1<WPngImage::Pixel16>()) ERRORRET1;
@@ -1939,6 +2192,6 @@ int main()
     if(!testImages3()) ERRORRET1;
     if(!testSavingAndLoading()) ERRORRET1;
 
-    std::remove("WPngImage_testing.png");
+    std::remove(kTestPngImageFileName);
     std::cout << "Ok.\n";
 }

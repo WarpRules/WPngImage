@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cassert>
 
+const bool WPngImage::isUsingLibpng = false;
+
 //============================================================================
 // Auxiliary functions for reading PNG data
 //============================================================================

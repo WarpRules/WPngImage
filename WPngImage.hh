@@ -27,8 +27,8 @@
 #endif
 #endif
 
-#define WPNGIMAGE_VERSION 0x010001
-#define WPNGIMAGE_VERSION_STRING "1.0.1"
+#define WPNGIMAGE_VERSION 0x010100
+#define WPNGIMAGE_VERSION_STRING "1.1.0"
 #define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2016 Juha Nieminen"
 
 
@@ -135,6 +135,8 @@ class WPngImage
     void swap(WPngImage&);
     void move(WPngImage&);
 
+    static const bool isUsingLibpng;
+
 
     //------------------------------------------------------------------------
     // Image loading and creation
@@ -215,6 +217,7 @@ class WPngImage
     bool is16BPCPixelFormat() const;
     bool isFloatPixelFormat() const;
 
+    bool allPixelsHaveFullAlpha() const;
     void convertToPixelFormat(PixelFormat);
 
 
@@ -273,7 +276,6 @@ class WPngImage
     static PixelFormat getPixelFormat(PngReadConvert, PngFileFormat);
     static PngFileFormat getClosestMatchFileFormat(PixelFormat);
     static PngFileFormat getFileFormat(PngWriteConvert, PngFileFormat, PixelFormat);
-    bool allPixelsHaveFullAlpha() const;
     void setPixel(std::size_t, const Pixel8&);
     void setPixel(std::size_t, const Pixel16&);
     void setPixelRow(PngFileFormat, int, Byte*, int) const;
@@ -284,7 +286,6 @@ class WPngImage
     IOStatus performLoadImage(const char*, bool, PngReadConvert, PixelFormat);
     IOStatus performLoadImageFromRAM(const void*, std::size_t, bool, PngReadConvert, PixelFormat);
     IOStatus writePngData(PngStructs&, PngFileFormat) const;
-    template<typename CT>
     void performWritePngData(PngStructs&, PngFileFormat, int, int, int) const;
     IOStatus performSaveImageToRAM
     (std::vector<unsigned char>*, ByteStreamOutputFunc, PngFileFormat) const;
