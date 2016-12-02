@@ -1,7 +1,7 @@
 # WPngImage
-WPngImage is a C++ wrapper class around the libpng library.
+WPngImage is a C++ library to manage images in PNG format. It can be used as a completely stand-alone library using the [lodepng](http://lodev.org/lodepng/) library (included), or using the official [libpng](http://www.libpng.org/) library.
 
-The main goal of WPngImage is to be as easy and simple to use as possible, while still being expressive and supporting a variety of PNG pixel formats. The design philosophy of this library is to aim for simplicity and ease-of-use, using a "plug&play" principle: Just one header file, and one source file. Simply add them to your project, and that's it. No myriads of source files, no configuration scripts and makefiles necessary. The only requirement is for libpng to be installed and available to your compiler.
+The main goal of WPngImage is to be as easy and simple to use as possible, while still being expressive and supporting a variety of PNG pixel formats. The design philosophy of this library is to aim for simplicity and ease-of-use, using a "plug&play" principle: Just a couple of source files. Simply add them to your project, and that's it. No myriads of source files, no configuration scripts and makefiles necessary.
 
 WPngImage supports internal pixel representations in 8-bits-per-channel, 16-bits-per-channel and floating point, in RGBA or gray-alpha modes. The public interface of the class has been designed in such a manner that all these internal representations can be handled in the same way, with identical code, regardless of what the format of the pixels is (although, if necessary, the program can perform different operations depending on the internal pixel format.) A variety of arithmetic and colorspace conversion operations for pixels are provided.
 
