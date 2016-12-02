@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage 1.0.1 documentation</title>
+  <title>WPngImage 1.1.0 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -79,17 +79,18 @@ code
 </head>
 
 <body>
-<h1>WPngImage 1.0.1 documentation</h1>
+<h1>WPngImage 1.1.0 documentation</h1>
 
-<p><code>WPngImage</code> is a C++ wrapper class around the
-  <a href="http://www.libpng.org/">libpng</a> library.</p>
+<p><code>WPngImage</code> is a C++ library to manage images in PNG format. It can be used
+  as a completely stand-alone library using the <a href="http://lodev.org/lodepng/">lodepng</a>
+  library (included), or using the official <a href="http://www.libpng.org/">libpng</a> library
+  (see the section <a href="#compiling">Compiling</a> for instructions on this).</p>
 
 <p>The main goal of <code>WPngImage</code> is to be as easy and simple to use as possible, while
   still being expressive and supporting a variety of PNG pixel formats. The design
   philosophy of this library is to aim for simplicity and ease-of-use, using a "plug&amp;play"
-  principle: Just one header file, and one source file. Simply add them to your project,
-  and that's it. No myriads of source files, no configuration scripts and makefiles necessary.
-  The only requirement is for libpng to be installed and available to your compiler.</p>
+  principle: Just a couple of source files. Simply add them to your project, and that's it.
+  No myriads of source files, no configuration scripts and makefiles necessary.</p>
 
 <p><code>WPngImage</code> supports internal pixel representations in 8-bits-per-channel,
   16-bits-per-channel and floating point, in RGBA or gray-alpha modes. The public interface
@@ -123,6 +124,11 @@ code
 	pixel formats</a></li>
   </ul>
   <li><a href="#compiling">Compiling</a></li>
+  <ul>
+    <li><a href="#compiling_standalone">As a stand-alone class</a></li>
+    <li><a href="#compiling_libpng">Using libpng</a></li>
+    <li><a href="#compiling_other">Other settings</a></li>
+  </ul>
   <li><a href="#macros">Precompiler macros</a></li>
   <li><a href="#wpngimage_reference">WPngImage reference</a></li>
   <ul>
@@ -481,17 +487,42 @@ pixel formats</h3>
 
 <!---------------------------------------------------------------------------->
 <h2 id="compiling">Compiling</h2>
+<h3 id="compiling_standalone">As a stand-alone class</h3>
 
-<p><code>WPngImage</code> has been designed with a simple "plug&amp;play" principle:
-  it consists of a single header file and a single source file. It's enough to add them
-  to your project, or compiler command. The files should be put in a place in the project
-  so that other files can do an <code>#include "WPngImage.hh"</code>.</p>
+<p>To integrate <code>WPngImage</code> into your project as a stand-alone class (but still
+  with full PNG saving and loading support), add the following source code files to your
+  project or compiler command:</p>
 
-<p>The class requires <a href="http://www.libpng.org/">libpng</a>, which should thus be
-  available to the compiler, and compiled into the project. For example, in a typical Linux
-  system a program can be compiled like:</p>
+<ul>
+  <li><code>WPngImage.cc</code></li>
+  <li><code>WPngImage_lodepng.cc</code></li>
+  <li><code>lodepng.cpp</code></li>
+</ul>
 
-<pre>g++ -O3 -std=c++14 test.cc WPngImage.cc -lpng</pre>
+<p>Nothing else is needed. For possible updates on the <code>lodepng.cpp</code> file,
+  consult the <a href="http://lodev.org/lodepng/">lodpng</a> home page.</p>
+
+<p>For example, in a typical Linux system a small program could be compiled like:</p>
+
+<pre>g++ -O3 -std=c++14 example.cc WPngImage.cc WPngImage_lodepng.cc lodepng.cpp</pre>
+
+<h3 id="compiling_libpng">Using libpng</h3>
+
+<p>If you would prefer to use the official <a href="http://www.libpng.org/">libpng</a> library
+  instead, add the following source code files to your project or compiler command:</p>
+
+<ul>
+  <li><code>WPngImage.cc</code></li>
+  <li><code>WPngImage_libpng.cc</code></li>
+</ul>
+
+<p>Note, however, that in this case libpng needs to be available to your compiler.</p>
+
+<p>In a typical Linux system a program can be compiled like:</p>
+
+<pre>g++ -O3 -std=c++14 example.cc WPngImage.cc WPngImage_libpng.cc -lpng</pre>
+
+<h3 id="compiling_other">Other settings</h3>
 
 <p>By default the class uses some C++11 features for additional convenience and efficiency
   (for example it implements a move constructor and move assignment operator). If necessary,
@@ -509,7 +540,7 @@ pixel formats</h3>
   <code>1</code> in your project/compiler settings (in which case <code>WPngImage.hh</code>
   doesn't need to be edited.) For example with g++ it would happen like:</p>
 
-<pre>g++ -O3 -DWPNGIMAGE_RESTRICT_TO_CPP98=1 test.cc WPngImage.cc -lpng</pre>
+<pre>g++ -O3 -DWPNGIMAGE_RESTRICT_TO_CPP98=1 example.cc WPngImage.cc WPngImage_lodepng.cc lodepng.cpp</pre>
 
 <!---------------------------------------------------------------------------->
 <h2 id="macros">Precompiler macros</h2>
@@ -520,17 +551,17 @@ pixel formats</h3>
 
 <p>An integer containing three values in its three least-significant bytes: Major version
   (third-least-significant byte), minor version (second-least-significant byte), minor
-  sub-version (least-significant byte). For example, the value <code>0x010000</code> indicates
-  the version 1.0.0.</p>
+  sub-version (least-significant byte). For example, the value <code>0x010100</code> indicates
+  the version 1.1.0.</p>
 
 <pre>WPNGIMAGE_VERSION_STRING</pre>
 
-<p>The version in string format. For example, <code>"1.0.0"</code>.</p>
+<p>The version in string format. For example, <code>"1.1.0"</code>.</p>
 
 <pre>WPNGIMAGE_COPYRIGHT_STRING</pre>
 
 <p>A string containing short copyright info. For example,
-  <code>"WPngImage v1.0.0 (C)2016 Juha Nieminen"</code>.</p>
+  <code>"WPngImage v1.1.0 (C)2016 Juha Nieminen"</code>.</p>
 
 <!---------------------------------------------------------------------------->
 <h2 id="wpngimage_reference">WPngImage reference</h2>
@@ -834,6 +865,11 @@ bool isRGBAPixelFormat() const;
 bool is8BPCPixelFormat() const;
 bool is16BPCPixelFormat() const;
 bool isFloatPixelFormat() const;</pre>
+
+<p>The following static const bool variable can be used to determine if the class is using
+  libpng or lodepng:</p>
+
+<pre>static const bool isUsingLibpng;</pre>
 
 <p>Convert the current image to another pixel format:</p>
 
