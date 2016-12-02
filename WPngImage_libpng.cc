@@ -104,6 +104,20 @@ namespace
         FilePtr(const FilePtr&);
         FilePtr& operator=(const FilePtr&);
     };
+
+    inline WPngImage::UInt16 getPNGComponent16
+    (const std::vector<unsigned char>& rawImageData, std::size_t index)
+    {
+        return ((WPngImage::UInt16(rawImageData[index]) << 8) |
+                WPngImage::UInt16(rawImageData[index + 1]));
+    }
+
+    inline void setPNGComponent16
+    (std::vector<unsigned char>& rawImageData, std::size_t index, WPngImage::UInt16 value)
+    {
+        rawImageData[index] = (unsigned char)(value >> 8);
+        rawImageData[index + 1] = (unsigned char)value;
+    }
 }
 
 
@@ -137,14 +151,17 @@ WPngImage::IOStatus WPngImage::readPngData
     if(bitDepth == 16)
     {
         assert(rowBytes <= 4*2*unsigned(imageWidth));
-        std::vector<UInt16> dataRow(imageWidth * 4);
+        std::vector<unsigned char> dataRow(4*2*imageWidth);
 
         for(int y = 0, destIndex = 0; y < imageHeight; ++y)
         {
             png_read_row(structs.mPngStructPtr, (png_bytep) &dataRow[0], 0);
-            for(int x = 0; x < imageWidth*4; x += 4, ++destIndex)
+            for(int x = 0; x < imageWidth*8; x += 8, ++destIndex)
                 setPixel(std::size_t(destIndex),
-                         Pixel16(dataRow[x], dataRow[x+1], dataRow[x+2], dataRow[x+3]));
+                         Pixel16(getPNGComponent16(dataRow, x),
+                                 getPNGComponent16(dataRow, x + 2),
+                                 getPNGComponent16(dataRow, x + 4),
+                                 getPNGComponent16(dataRow, x + 6)));
         }
     }
     else
@@ -256,10 +273,24 @@ void WPngImage::performWritePngData
 
     std::vector<CT> rowData(imageWidth * colorComponents);
 
-    for(int y = 0; y < imageHeight; ++y)
+    if(bitDepth == 16)
     {
-        setPixelRow(fileFormat, y, &rowData[0], colorComponents);
-        png_write_row(structs.mPngStructPtr, (png_bytep)(&rowData[0]));
+        std::vector<unsigned char> rowDataBytes(rowData.size() * 2);
+        for(int y = 0; y < imageHeight; ++y)
+        {
+            setPixelRow(fileFormat, y, &rowData[0], colorComponents);
+            for(std::size_t i = 0; i < rowData.size(); ++i)
+                setPNGComponent16(rowDataBytes, i * 2, rowData[i]);
+            png_write_row(structs.mPngStructPtr, (png_bytep)(&rowDataBytes[0]));
+        }
+    }
+    else
+    {
+        for(int y = 0; y < imageHeight; ++y)
+        {
+            setPixelRow(fileFormat, y, &rowData[0], colorComponents);
+            png_write_row(structs.mPngStructPtr, (png_bytep)(&rowData[0]));
+        }
     }
 
     png_write_end(structs.mPngStructPtr, structs.mPngInfoPtr);

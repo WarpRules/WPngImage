@@ -3,7 +3,9 @@
    test modifications to the library.
 */
 
+#ifndef TEST_DO_NOT_PRINT_WARNING
 #warning "This is a test file. Do not include it in your project."
+#endif
 
 #include "WPngImage.hh"
 #include <iostream>
@@ -1401,6 +1403,303 @@ static bool testImages3()
 
 
 //============================================================================
+// Test saving and loading against libpng (ie. that lodepng is used correctly)
+//============================================================================
+#ifdef TEST_AGAINST_LIBPNG
+#include <png.h>
+
+namespace
+{
+    struct PngPixelData
+    {
+        std::vector<WPngImage::Pixel16> pixels;
+        int width, height;
+
+        bool compareToImage(const WPngImage&) const;
+    };
+
+    struct PngStructs
+    {
+        png_structp mPngStructPtr;
+        png_infop mPngInfoPtr;
+        bool mReading;
+        std::string mPngLibErrorMsg;
+
+        PngStructs(bool);
+        ~PngStructs();
+        PngStructs(const PngStructs&);
+        PngStructs& operator=(const PngStructs&);
+
+        static void handlePngError(png_structp, png_const_charp);
+        static void handlePngWarning(png_structp, png_const_charp);
+    };
+
+    struct FilePtr
+    {
+        std::FILE* fp;
+
+        FilePtr(): fp(0) {}
+        ~FilePtr() { if(fp) std::fclose(fp); }
+
+     private:
+        FilePtr(const FilePtr&);
+        FilePtr& operator=(const FilePtr&);
+    };
+}
+
+bool PngPixelData::compareToImage(const WPngImage& image) const
+{
+    if(image.width() != width || image.height() != height)
+    {
+        std::cout << "Dimensions do not match: "
+                  << image.width() << "x" << image.height() << " vs. "
+                  << width << "x" << height << "\n";
+        ERRORRET;
+    }
+
+    for(int y = 0; y < height; ++y)
+        for(int x = 0; x < width; ++x)
+            if(!compare(__LINE__, image.get16(x, y), pixels[y*width + x]))
+            {
+                std::cout << "at pixel coordinates (" << x << ", " << y << ")\n";
+                return false;
+            }
+
+    return true;
+}
+
+PngStructs::PngStructs(bool forReading):
+    mPngStructPtr(0), mPngInfoPtr(0), mReading(forReading), mPngLibErrorMsg()
+{
+    if(forReading)
+        mPngStructPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
+    else
+        mPngStructPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
+
+    if(mPngStructPtr) mPngInfoPtr = png_create_info_struct(mPngStructPtr);
+
+    png_set_error_fn(mPngStructPtr, this, &handlePngError, &handlePngWarning);
+}
+
+PngStructs::~PngStructs()
+{
+    if(mReading)
+    {
+        if(mPngStructPtr && mPngInfoPtr) png_destroy_read_struct(&mPngStructPtr, &mPngInfoPtr, 0);
+        else if(mPngStructPtr) png_destroy_read_struct(&mPngStructPtr, 0, 0);
+    }
+    else
+    {
+        if(mPngStructPtr && mPngInfoPtr) png_destroy_write_struct(&mPngStructPtr, &mPngInfoPtr);
+        else if(mPngStructPtr) png_destroy_write_struct(&mPngStructPtr, 0);
+    }
+}
+
+void PngStructs::handlePngError(png_structp png_ptr, png_const_charp errorMsg)
+{
+    PngStructs* obj = reinterpret_cast<PngStructs*>(png_get_error_ptr(png_ptr));
+    obj->mPngLibErrorMsg = errorMsg;
+    longjmp(png_jmpbuf(png_ptr), 1);
+}
+
+void PngStructs::handlePngWarning(png_structp, png_const_charp)
+{}
+
+
+//----------------------------------------------------------------------------
+// Read PNG data
+//----------------------------------------------------------------------------
+namespace
+{
+    inline WPngImage::UInt16 getPNGComponent16
+    (const std::vector<unsigned char>& rawImageData, std::size_t index)
+    {
+        return ((WPngImage::UInt16(rawImageData[index]) << 8) |
+                WPngImage::UInt16(rawImageData[index + 1]));
+    }
+
+    inline void setPNGComponent16
+    (std::vector<unsigned char>& rawImageData, std::size_t index, WPngImage::UInt16 value)
+    {
+        rawImageData[index] = (unsigned char)(value >> 8);
+        rawImageData[index + 1] = (unsigned char)value;
+    }
+}
+
+static void readPngData(PngStructs& structs, PngPixelData& dest)
+{
+    png_read_info(structs.mPngStructPtr, structs.mPngInfoPtr);
+
+    const int imageWidth = png_get_image_width(structs.mPngStructPtr, structs.mPngInfoPtr);
+    const int imageHeight = png_get_image_height(structs.mPngStructPtr, structs.mPngInfoPtr);
+    const unsigned bitDepth = png_get_bit_depth(structs.mPngStructPtr, structs.mPngInfoPtr);
+
+    png_set_add_alpha(structs.mPngStructPtr, 0xffff, PNG_FILLER_AFTER);
+    png_set_palette_to_rgb(structs.mPngStructPtr);
+    png_set_gray_to_rgb(structs.mPngStructPtr);
+
+    png_read_update_info(structs.mPngStructPtr, structs.mPngInfoPtr);
+    const unsigned rowBytes = png_get_rowbytes(structs.mPngStructPtr, structs.mPngInfoPtr);
+
+    dest.width = imageWidth;
+    dest.height = imageHeight;
+    dest.pixels.clear();
+    dest.pixels.reserve(imageWidth * imageHeight);
+
+    if(bitDepth == 16)
+    {
+        assert(rowBytes <= 4*2*unsigned(imageWidth));
+        std::vector<unsigned char> dataRow(4*2*imageWidth);
+
+        for(int y = 0, destIndex = 0; y < imageHeight; ++y)
+        {
+            png_read_row(structs.mPngStructPtr, (png_bytep) &dataRow[0], 0);
+            for(int x = 0; x < imageWidth*8; x += 8, ++destIndex)
+                dest.pixels.push_back
+                    (WPngImage::Pixel16(getPNGComponent16(dataRow, x),
+                                        getPNGComponent16(dataRow, x + 2),
+                                        getPNGComponent16(dataRow, x + 4),
+                                        getPNGComponent16(dataRow, x + 6)));
+        }
+    }
+    else
+    {
+        assert(rowBytes <= 4*unsigned(imageWidth));
+        std::vector<Byte> dataRow(imageWidth * 4);
+
+        for(int y = 0, destIndex = 0; y < imageHeight; ++y)
+        {
+            png_read_row(structs.mPngStructPtr, (png_bytep) &dataRow[0], 0);
+            for(int x = 0; x < imageWidth*4; x += 4, ++destIndex)
+                dest.pixels.push_back
+                    (WPngImage::Pixel16
+                     (WPngImage::Pixel8(dataRow[x], dataRow[x+1], dataRow[x+2], dataRow[x+3])));
+        }
+    }
+
+    png_read_end(structs.mPngStructPtr, structs.mPngInfoPtr);
+}
+
+
+//----------------------------------------------------------------------------
+// Load PNG image from file
+//----------------------------------------------------------------------------
+static bool loadPngDataFromFile(const char* fileName, PngPixelData& dest)
+{
+    FilePtr iFile;
+    iFile.fp = std::fopen(fileName, "rb");
+    if(!iFile.fp) { std::perror(fileName); ERRORRET; }
+
+    png_byte header[8] = {};
+    std::fread(header, 1, 8, iFile.fp);
+    if(png_sig_cmp(header, 0, 8))
+    {
+        std::cout << fileName << ": PNG signature check failed\n";
+        ERRORRET;
+    }
+    std::fseek(iFile.fp, 0, SEEK_SET);
+
+    PngStructs structs(true);
+    if(!structs.mPngInfoPtr)
+    {
+        std::cout << "Failed to initialize info_ptr\n";
+        ERRORRET;
+    }
+
+    if(setjmp(png_jmpbuf(structs.mPngStructPtr)))
+    {
+        std::cout << fileName << ": libpng returned an error: \""
+                  << structs.mPngLibErrorMsg << "\"\n";
+        ERRORRET;
+    }
+
+    png_init_io(structs.mPngStructPtr, iFile.fp);
+    readPngData(structs, dest);
+    return true;
+}
+
+
+//----------------------------------------------------------------------------
+// Read PNG data from RAM
+//----------------------------------------------------------------------------
+namespace
+{
+    struct RAMPngData
+    {
+        png_const_charp mData;
+        std::size_t mDataSize, mCurrentDataIndex;
+    };
+}
+
+static void pngDataReader(png_structp png_ptr, png_bytep data, png_size_t length)
+{
+    RAMPngData* obj = reinterpret_cast<RAMPngData*>(png_get_io_ptr(png_ptr));
+
+    if(obj->mCurrentDataIndex + length > obj->mDataSize)
+        png_error(png_ptr, "Read error");
+    else
+    {
+        std::memcpy(data, obj->mData + obj->mCurrentDataIndex, length);
+        obj->mCurrentDataIndex += length;
+    }
+}
+
+static bool loadPngDataFromRAM
+(const void* pngData, std::size_t pngDataSize, PngPixelData& dest)
+{
+    RAMPngData ramPngData;
+    ramPngData.mData = (png_const_charp)pngData;
+    ramPngData.mDataSize = pngDataSize;
+    ramPngData.mCurrentDataIndex = 0;
+
+    if(png_sig_cmp((png_bytep)ramPngData.mData, 0, 8))
+    {
+        std::cout << "PNG signature check failed\n";
+        ERRORRET;
+    }
+
+    PngStructs structs(true);
+    if(!structs.mPngInfoPtr)
+    {
+        std::cout << "Failed to initialize info_ptr\n";
+        ERRORRET;
+    }
+
+    if(setjmp(png_jmpbuf(structs.mPngStructPtr)))
+    {
+        std::cout << "libpng returned an error: \""
+                  << structs.mPngLibErrorMsg << "\"\n";
+        ERRORRET;
+    }
+
+    png_set_read_fn(structs.mPngStructPtr, &ramPngData, &pngDataReader);
+    readPngData(structs, dest);
+    return true;
+}
+
+//----------------------------------------------------------------------------
+// Check against libpng
+//----------------------------------------------------------------------------
+static bool loadImageFileWithLibpngAndCompare(const char* fileName, const WPngImage& image)
+{
+    PngPixelData pixelData;
+    if(!loadPngDataFromFile(fileName, pixelData)) ERRORRET;
+    if(!pixelData.compareToImage(image)) ERRORRET;
+    return true;
+}
+
+static bool loadImageFromRAMWithLibpngAndCompare(const void* pngData, std::size_t pngDataSize,
+                                                 const WPngImage& image)
+{
+    PngPixelData pixelData;
+    if(!loadPngDataFromRAM(pngData, pngDataSize, pixelData)) ERRORRET;
+    if(!pixelData.compareToImage(image)) ERRORRET;
+    return true;
+}
+#endif
+
+
+//============================================================================
 // Test saving and loading
 //============================================================================
 static bool checkIOStatus(WPngImage::IOStatus status, bool saving)
@@ -1571,6 +1870,11 @@ static bool testSavingAndLoading(WPngImage::PixelFormat pixelFormat,
     if(!checkLoadedImage<Pixel_t>(image5, pixelFormat, fileFormat, width, height, maxValue,
                                   getPixelFunc)) ERRORRET;
 #endif
+
+#ifdef TEST_AGAINST_LIBPNG
+    if(!loadImageFileWithLibpngAndCompare("WPngImage_testing.png", image)) ERRORRET;
+    if(!loadImageFromRAMWithLibpngAndCompare(&buffer[0], buffer.size(), image)) ERRORRET;
+#endif
     return true;
 }
 
@@ -1618,6 +1922,7 @@ static bool testSavingAndLoading()
 
     return true;
 }
+
 
 //============================================================================
 // main()
