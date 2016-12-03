@@ -180,15 +180,15 @@ class WPngImage
     // Image writing
     //------------------------------------------------------------------------
     IOStatus saveImage(const char* fileName,
-                       PngWriteConvert = kPngWriteConvert_original) const;
+                       PngWriteConvert = kPngWriteConvert_closestMatch) const;
     IOStatus saveImage(const char* fileName, PngFileFormat) const;
 
     IOStatus saveImage(const std::string& fileName,
-                       PngWriteConvert = kPngWriteConvert_original) const;
+                       PngWriteConvert = kPngWriteConvert_closestMatch) const;
     IOStatus saveImage(const std::string& fileName, PngFileFormat) const;
 
     IOStatus saveImageToRAM(std::vector<unsigned char>& dest,
-                            PngWriteConvert = kPngWriteConvert_original) const;
+                            PngWriteConvert = kPngWriteConvert_closestMatch) const;
     IOStatus saveImageToRAM(std::vector<unsigned char>& dest, PngFileFormat) const;
 
 #if WPNGIMAGE_RESTRICT_TO_CPP98
@@ -197,7 +197,7 @@ class WPngImage
     using ByteStreamOutputFunc = std::function<void(const unsigned char*, std::size_t)>;
 #endif
     IOStatus saveImageToRAM(ByteStreamOutputFunc,
-                            PngWriteConvert = kPngWriteConvert_original) const;
+                            PngWriteConvert = kPngWriteConvert_closestMatch) const;
     IOStatus saveImageToRAM(ByteStreamOutputFunc, PngFileFormat) const;
 
 
@@ -209,6 +209,7 @@ class WPngImage
 
     PngFileFormat originalFileFormat() const;
     void setFileFormat(PngFileFormat);
+    void setFileFormat(PngWriteConvert);
 
     PixelFormat currentPixelFormat() const;
     bool isGrayscalePixelFormat() const;

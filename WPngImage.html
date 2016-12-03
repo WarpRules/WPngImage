@@ -288,9 +288,10 @@ pixel.r *= 2;
 pixel.g /= 4;
 image.set(x, y, pixel);</pre>
 
-<p>By default the image will be saved using the same pixel format as the input file. The image
-  can be saved with another pixel format by specifying it to the <code>saveImage()</code>
-  function. See the section <a href="#wpngimage_save_file">Saving</a> for details.</p>
+<p>By default the image will be saved using a pixel format that most closely matches the one
+  being currently used. The image can be saved with another pixel format by specifying it to
+  the <code>saveImage()</code> function. See the section
+  <a href="#wpngimage_save_file">Saving</a> for details.</p>
 
 <!---------------------------------------------------------------------------->
 <h3 id="tutorial_drawing">Drawing images and lines</h3>
@@ -389,14 +390,6 @@ image.saveImage("photo_grayscale.png");</pre>
   object. (Setting a pixel with a non-grayscale value will cause it to be automatically
   converted to grayscale.)</p>
 
-<p>Note that, however, <code>WPngImage</code> will by default save the image with the same
-  pixel format as the input file. Thus, in the above example, if the input PNG file used
-  RGBA, so will the resulting PNG file. We can override this behavior by telling
-  the class to match the current pixel format, rather than the one in the input file:</p>
-
-<pre>image.loadImage("photo.png", WPngImage::kPngReadConvert_Grayscale);
-image.saveImage("photo_grayscale.png", WPngImage::kPngWriteConvert_closestMatch);</pre>
-
 <p>We can also specify a specific output pixel format to <code>saveImage()</code>:</p>
 
 <pre>image.loadImage("photo.png");
@@ -405,19 +398,12 @@ image.saveImage("photo_grayscale.png", WPngImage::kPngFileFormat_GA8);</pre>
 <p>In this case, the image will be loaded and handled with whatever pixel format the input
   file has, but written to the output file as an 8-bit grayscale PNG.</p>
 
-<p>The used file format can also be specified separately, so that it doesn't need to be
-  given to <code>saveImage()</code> every time:</p>
-
-<pre>image.loadImage("photo.png");
-image.setFileFormat(WPngImage::kPngFileFormat_GA8);
-image.saveImage("photo_grayscale.png");</pre>
-
 <p>A final option is to convert the image to another pixel format (grayscale in this case)
   after it has been loaded:</p>
 
 <pre>image.loadImage("photo.png");
 image.convertToPixelFormat(WPngImage::kPixelFormat_GA8);
-image.saveImage("photo_grayscale.png", WPngImage::kPngWriteConvert_closestMatch);</pre>
+image.saveImage("photo_grayscale.png");</pre>
 
 <p>If you would prefer to retain the bit depth if the original PNG file, you can check this
   depth with the <code>is8BPCPixelFormat()</code> or the <code>is16BPCPixelFormat()</code>
@@ -693,6 +679,13 @@ IOStatus loadImage(const std::string& fileName, PixelFormat);</pre>
     an RGBA pixel format, with matching bit depth.</li>
 </ul>
 
+<p>Note: By default a pixel format that most closely matches the input PNG file will be used.
+  This means that loading a grayscale PNG will cause the pixel format to likewise be grayscale.
+  However, for applications that modify the image colors in some manner it may be useful, or
+  even necessary, to always convert the image to RGBA. It's thus recommended to always specify
+  <code>WPngImage::kPngReadConvert_RGBA</code> (or possibly <code>kPixelFormat_RGBA8</code> if
+  the application only supports 8 bits per channel) when using the class in these applications.</p>
+
 <p>See the section <a href="#wpngimage_iostatus">IOStatus</a> for details on the return value.</p>
 
 <!---------------------------------------------------------------------------->
@@ -714,12 +707,12 @@ IOStatus loadImageFromRAM(const void* pngData, std::size_t pngDataSize, PixelFor
 <h3 id="wpngimage_save_file">Save to a PNG file</h3>
 
 <pre>IOStatus saveImage(const char* fileName,
-                   PngWriteConvert = kPngWriteConvert_original);
-IOStatus saveImage(const char* fileName, PngFileFormat);
+                   PngWriteConvert = kPngWriteConvert_closestMatch) const;
+IOStatus saveImage(const char* fileName, PngFileFormat) const;
 
 IOStatus saveImage(const std::string& fileName,
-                   PngWriteConvert = kPngWriteConvert_original);
-IOStatus saveImage(const std::string& fileName, PngFileFormat);</pre>
+                   PngWriteConvert = kPngWriteConvert_closestMatch) const;
+IOStatus saveImage(const std::string& fileName, PngFileFormat) const;</pre>
 
 <p>Save the current image data to a PNG file. (If there is currently no image data,
   does nothing.) A specific PNG pixel format can be specified as a second parameter (see section
@@ -733,15 +726,15 @@ IOStatus saveImage(const std::string& fileName, PngFileFormat);</pre>
 <p><code>WPngImage::PngWriteConvert</code> can have the following values:</p>
 
 <ul>
+  <li><code>WPngImage::kPngWriteConvert_closestMatch</code>: The image will be saved using
+    the pixel format that most closely matches the one being currently used (ignoring the
+    pixel format of the file that was loaded). If a floating point pixel format is being
+    used, it will be saved with 16 bits-per-channel.</li>
   <li><code>WPngImage::kPngWriteConvert_original</code>: The image will be saved using the
     pixel format that most closely matches the one in the PNG file that was loaded (even if
     it's different from the pixel format currently being used.) For example, if the original
     PNG file was RGBA with 8 bits-per-channel, and it was loaded to an RGBAF pixel format,
     with this parameter it will be saved back to an RGBA 8 bits-per-channel format.</li>
-  <li><code>WPngImage::kPngWriteConvert_closestMatch</code>: The image will be saved using
-    the pixel format that most closely matches the one being currently used (ignoring the
-    pixel format of the file that was loaded). If a floating point pixel format is being
-    used, it will be saved with 16 bits-per-channel.</li>
 </ul>
 
 <p>The "original pixel format of the PNG file" can be changed after loading a file with
@@ -749,8 +742,7 @@ IOStatus saveImage(const std::string& fileName, PngFileFormat);</pre>
 
 <pre>void setFileFormat(PngFileFormat);</pre>
 
-<p>After this, <code>WPngImage::kPngWriteConvert_original</code> (which is the default when
-  calling <code>saveImage()</code> without a second parameter) will be interpreted as
+<p>After this, <code>WPngImage::kPngWriteConvert_original</code> will be interpreted as
   that specified format.</p>
 
 <p>Note that if all the pixels to be saved are fully opaque (ie. have full alphas), saving the
@@ -769,18 +761,18 @@ IOStatus saveImage(const std::string& fileName, PngFileFormat);</pre>
 <p>Encode into a <code>std::vector&lt;unsigned char&gt;</code>:</p>
 
 <pre>IOStatus saveImageToRAM(std::vector&lt;unsigned char&gt;&amp; dest,
-                        PngWriteConvert = kPngWriteConvert_original);
-IOStatus saveImageToRAM(std::vector&lt;unsigned char&gt;&amp; dest, PngFileFormat);</pre>
+                        PngWriteConvert = kPngWriteConvert_closestMatch) const;
+IOStatus saveImageToRAM(std::vector&lt;unsigned char&gt;&amp; dest, PngFileFormat) const;</pre>
 
 <p>Pass the encoded data to a callback function:</p>
 
 <pre>using ByteStreamOutputFunc = std::function&lt;void(const unsigned char*, std::size_t)&gt;;
 
 IOStatus saveImageToRAM(ByteStreamOutputFunc,
-                        PngWriteConvert = kPngWriteConvert_original);
-IOStatus saveImageToRAM(ByteStreamOutputFunc, PngFileFormat);</pre>
+                        PngWriteConvert = kPngWriteConvert_closestMatch) const;
+IOStatus saveImageToRAM(ByteStreamOutputFunc, PngFileFormat) const;</pre>
 
-<p>Note that in the latter case, the callback function will be called numerous times, with
+<p>Note that in the latter case, the callback function may be called numerous times, with
   differing amounts of data, which should be appended to each other by the function.</p>
 
 <p>In C++11 mode, anything that behaves like a function taking two parameters,
@@ -841,7 +833,7 @@ switch(status)
     std::cerr &lt;&lt; "\n";
     break;
 
- default: <span class="comment">/* image loaded ok */</span>
+ case WPngImage::kIOStatus_Ok: <span class="comment">/* image loaded ok */</span>
 }</pre>
 
 <!---------------------------------------------------------------------------->

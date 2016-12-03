@@ -1549,6 +1549,12 @@ void WPngImage::setFileFormat(PngFileFormat newFormat)
     if(mData) mData->mPngFileFormat = newFormat;
 }
 
+void WPngImage::setFileFormat(PngWriteConvert conversion)
+{
+    if(mData) mData->mPngFileFormat =
+                  getFileFormat(conversion, mData->mPngFileFormat, currentPixelFormat());
+}
+
 bool WPngImage::isGrayscalePixelFormat() const
 {
     const PixelFormat pixelFormat = currentPixelFormat();
