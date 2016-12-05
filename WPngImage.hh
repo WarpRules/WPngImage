@@ -27,8 +27,8 @@
 #endif
 #endif
 
-#define WPNGIMAGE_VERSION 0x010100
-#define WPNGIMAGE_VERSION_STRING "1.1.0"
+#define WPNGIMAGE_VERSION 0x010101
+#define WPNGIMAGE_VERSION_STRING "1.1.1"
 #define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2016 Juha Nieminen"
 
 
@@ -252,6 +252,14 @@ class WPngImage
     void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, Pixel8);
     void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, Pixel16);
     void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, PixelF);
+
+
+    const Pixel8* getRawPixelData8() const;
+    Pixel8* getRawPixelData8();
+    const Pixel16* getRawPixelData16() const;
+    Pixel16* getRawPixelData16();
+    const PixelF* getRawPixelDataF() const;
+    PixelF* getRawPixelDataF();
 
 
 

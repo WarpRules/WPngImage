@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage 1.1.0 documentation</title>
+  <title>WPngImage 1.1.1 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -79,7 +79,7 @@ code
 </head>
 
 <body>
-<h1>WPngImage 1.1.0 documentation</h1>
+<h1>WPngImage 1.1.1 documentation</h1>
 
 <p><code>WPngImage</code> is a C++ library to manage images in PNG format. It can be used
   as a completely stand-alone library using the <a href="http://lodev.org/lodepng/">lodepng</a>
@@ -146,6 +146,7 @@ code
     <li><a href="#wpngimage_drawing_images">Drawing images</a></li>
     <li><a href="#wpngimage_drawing_lines">Drawing lines</a></li>
     <li><a href="#wpngimage_resize_canvas">Resize canvas</a></li>
+    <li><a href="#wpngimage_lowlevel">Low level access</a></li>
   </ul>
   <li><a href="#pixel_reference">Pixel reference</a></li>
   <ul>
@@ -978,6 +979,31 @@ void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, P
 
 <pre>image.resizeCanvas(-10, -10, image.width()+20, image.height()+20,
                    WPngImage::Pixel8(0, 0, 0, 0));</pre>
+
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_lowlevel">Low level access</h3>
+
+<pre>const Pixel8* getRawPixelData8() const;
+Pixel8* getRawPixelData8();
+const Pixel16* getRawPixelData16() const;
+Pixel16* getRawPixelData16();
+const PixelF* getRawPixelDataF() const;
+PixelF* getRawPixelDataF();</pre>
+
+<p>These functions return a raw pointer to the pixel data managed by this class.
+  The pointer, if not null, will point to an array of <code>width()*height()</code>
+  pixel objects of the correspondent type. These functions are provided for potential
+  efficiency optimizations in the calling code (as the array can be indexed and traversed
+  directly using the raw pointer, without extra operations).</p>
+
+<p><b>NOTE</b>, however, that these functions will only return a valid pointer if the
+  current pixel format matches exactly the RGBA pixel type of the correspondent bit depth.
+  In other words, eg. <code>getRawPixelData8()</code> will return a valid pointer only if
+  <code>currentPixelFormat()</code> is <code>WPngImage::kPixelFormat_RGBA8</code>. Likewise
+  for the other functions. In any other situations these functions will return a null
+  pointer. If the current pixel format is a gray-alpha format, currently they will all return
+  null. Thus these functions should be used carefully.</p>
 
 
 <!---------------------------------------------------------------------------->

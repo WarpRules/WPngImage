@@ -1943,6 +1943,25 @@ static bool checkIOStatus(WPngImage::IOStatus status, bool saving)
     return true;
 }
 
+template<typename TestPixel_t, typename PixelData_t>
+static bool checkRawPtr(const PixelData_t* ptr, int size,
+                        typename TestPixel_t::Component_t maxValue)
+{
+    typedef typename TestPixel_t::Component_t CT;
+    Rng rng(123);
+    for(int i = 0; i < size; ++i)
+    {
+        const CT r = rng()*maxValue/65535, g = rng()*maxValue/65535,
+            b = rng()*maxValue/65535, a = rng()*maxValue/65535;
+        if(!compare(__LINE__, TestPixel_t(ptr[i]), r, g, b, a))
+        {
+            std::cout << "- at index " << i << "\n";
+            return false;
+        }
+    }
+    return true;
+}
+
 template<typename Pixel_t>
 static bool checkLoadedImage(const WPngImage& image, WPngImage::PixelFormat pixelFormat,
                              WPngImage::PngFileFormat,
@@ -2006,6 +2025,27 @@ static bool checkLoadedImage(const WPngImage& image, WPngImage::PixelFormat pixe
                     return false;
                 }
             }
+
+        const WPngImage::Pixel8* ptr8 = image.getRawPixelData8();
+        const WPngImage::Pixel16* ptr16 = image.getRawPixelData16();
+        const WPngImage::PixelF* ptrF = image.getRawPixelDataF();
+
+        if(!((image.currentPixelFormat() == WPngImage::kPixelFormat_RGBA8 &&
+              ptr8 && !ptr16 && !ptrF) ||
+             (image.currentPixelFormat() == WPngImage::kPixelFormat_RGBA16 &&
+              !ptr8 && ptr16 && !ptrF) ||
+             (image.currentPixelFormat() == WPngImage::kPixelFormat_RGBAF &&
+              !ptr8 && !ptr16 && ptrF)))
+        {
+            std::cout << "WPngImage::getRawPixelDataX() did not return a proper value "
+                      << "(currentPixelFormat()=" << int(image.currentPixelFormat())
+                      << ", ptr8=" << ptr8 << ", ptr16=" << ptr16 << ", ptrF=" << ptrF
+                      << ")\n"; ERRORRET;
+        }
+
+        if(ptr8 && !checkRawPtr<Pixel_t>(ptr8, width*height, maxValue)) ERRORRET;
+        if(ptr16 && !checkRawPtr<Pixel_t>(ptr16, width*height, maxValue)) ERRORRET;
+        if(ptrF && !checkRawPtr<Pixel_t>(ptrF, width*height, maxValue)) ERRORRET;
     }
 
     return true;

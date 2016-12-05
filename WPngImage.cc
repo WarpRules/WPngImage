@@ -1814,6 +1814,42 @@ void WPngImage::resizeCanvas(int newOriginX, int newOriginY, int newWidth, int n
     }
 }
 
+const WPngImage::Pixel8* WPngImage::getRawPixelData8() const
+{
+    return mData && mData->mPixelFormat == kPixelFormat_RGBA8 ?
+        &(static_cast<const PngData<Pixel8>*>(mData)->mPixelData[0]) : 0;
+}
+
+WPngImage::Pixel8* WPngImage::getRawPixelData8()
+{
+    return mData && mData->mPixelFormat == kPixelFormat_RGBA8 ?
+        &(static_cast<PngData<Pixel8>*>(mData)->mPixelData[0]) : 0;
+}
+
+const WPngImage::Pixel16* WPngImage::getRawPixelData16() const
+{
+    return mData && mData->mPixelFormat == kPixelFormat_RGBA16 ?
+        &(static_cast<const PngData<Pixel16>*>(mData)->mPixelData[0]) : 0;
+}
+
+WPngImage::Pixel16* WPngImage::getRawPixelData16()
+{
+    return mData && mData->mPixelFormat == kPixelFormat_RGBA16 ?
+        &(static_cast<PngData<Pixel16>*>(mData)->mPixelData[0]) : 0;
+}
+
+const WPngImage::PixelF* WPngImage::getRawPixelDataF() const
+{
+    return mData && mData->mPixelFormat == kPixelFormat_RGBAF ?
+        &(static_cast<const PngData<PixelF>*>(mData)->mPixelData[0]) : 0;
+}
+
+WPngImage::PixelF* WPngImage::getRawPixelDataF()
+{
+    return mData && mData->mPixelFormat == kPixelFormat_RGBAF ?
+        &(static_cast<PngData<PixelF>*>(mData)->mPixelData[0]) : 0;
+}
+
 
 //============================================================================
 // Auxiliary functions for reading PNG data
