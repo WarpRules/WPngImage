@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage 1.1.1 documentation</title>
+  <title>WPngImage 1.2.0 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -79,7 +79,7 @@ code
 </head>
 
 <body>
-<h1>WPngImage 1.1.1 documentation</h1>
+<h1>WPngImage 1.2.0 documentation</h1>
 
 <p><code>WPngImage</code> is a C++ library to manage images in PNG format. It can be used
   as a completely stand-alone library using the <a href="http://lodev.org/lodepng/">lodepng</a>
@@ -117,7 +117,7 @@ code
   <ul>
     <li><a href="#tutorial_create_png">Creating a PNG image</a></li>
     <li><a href="#tutorial_load_save_png">Loading, changing and saving a PNG image</a></li>
-    <li><a href="#tutorial_drawing">Drawing images and lines</a></li>
+    <li><a href="#tutorial_drawing">Drawing images, lines and rectangles</a></li>
     <li><a href="#tutorial_color_spaces">Color spaces</a></li>
     <li><a href="#tutorial_change_pixel_format">Changing pixel formats</a></li>
     <li><a href="#tutorial_pixel_formats_advantages">Advantages and disadvantages of different
@@ -145,6 +145,7 @@ code
     <li><a href="#wpngimage_pixels">Getting and setting pixels</a></li>
     <li><a href="#wpngimage_drawing_images">Drawing images</a></li>
     <li><a href="#wpngimage_drawing_lines">Drawing lines</a></li>
+    <li><a href="#wpngimage_drawing_rectangles">Drawing rectangles</a></li>
     <li><a href="#wpngimage_resize_canvas">Resize canvas</a></li>
     <li><a href="#wpngimage_lowlevel">Low level access</a></li>
   </ul>
@@ -295,18 +296,25 @@ image.set(x, y, pixel);</pre>
   <a href="#wpngimage_save_file">Saving</a> for details.</p>
 
 <!---------------------------------------------------------------------------->
-<h3 id="tutorial_drawing">Drawing images and lines</h3>
+<h3 id="tutorial_drawing">Drawing images, lines and rectangles</h3>
 
-<p><code>WPngImage</code> offers a couple of basic drawing functions for convenience.</p>
+<p><code>WPngImage</code> offers some basic drawing functions for convenience. Some
+  examples:</p>
 
 <pre>image.putImage(10, 20, anotherImage);
-image.putImage(50, 100, anotherImage, 10, 10, 80, 80);
-
-image.drawImage(10, 20, anotherImage);
 image.drawImage(50, 100, anotherImage, 10, 10, 80, 80);
 
-image.drawHorLine(10, 20, 100, WPngImage::Pixel8(255, 255, 255, 190));
-image.drawVertLine(10, 20, 100, WPngImage::Pixel8(255, 255, 255, 190));</pre>
+image.putHorLine(10, 20, 100, WPngImage::Pixel8(255, 255, 255, 190));
+image.drawVertLine(10, 20, 100, WPngImage::Pixel8(255, 255, 255, 190));
+
+image.putRectangle(10, 20, 100, 50, WPngImage::Pixel8(255, 255, 0, 120), false);
+image.drawRectangle(100, 200, 100, 50, WPngImage::Pixel8(255, 255, 0, 120), true);</pre>
+
+<p>The difference between the <code>put...()</code> and <code>draw...()</code> functions
+  is that the former will simply assign the target pixels with the source pixels, overwriting them.
+  The latter will mix the pixels using alpha blending (ie. effectively drawing the parameter
+  image or pixel on top of this image.) This makes a difference if the source pixel has a non-full
+  alpha.</p>
 
 <p><code>putImage()</code> and <code>drawImage()</code> take another <code>WPngImage</code>
   object and copy its contents to this image at the specified coordinates. The coordinates
@@ -324,17 +332,19 @@ image.drawVertLine(10, 20, 100, WPngImage::Pixel8(255, 255, 255, 190));</pre>
   sub-section coordinates are outside of the parameter image (they will be handled as if
   the image had fully transparent pixels around it.)</p>
 
-<p>The difference between <code>putImage()</code> and <code>drawImage()</code> is that the
-  former will simply assign the target pixels with the source pixels, overwriting them.
-  The latter will mix the pixels using alpha blending (ie. effectively drawing the parameter
-  image on top of this image.) This makes a difference if the parameter image has non-full
-  alpha pixels.</p>
-
-<p><code>drawHorLine()</code> and <code>drawVertLine()</code> draw a horizontal/vertical
+<p><code>put/drawHorLine()</code> and <code>put/drawVertLine()</code> draw a horizontal/vertical
   line, starting at the coordinates specified by the first two parameters, with a length of
   the third parameter. (It's ok for any of these to be out of boundaries, and for the length
   to be negative.) Alpha blending will be used to draw the line (which makes a difference
   if the alpha of the given pixel is not full.)</p>
+
+<p><code>put/drawRectangle()</code> does the same for rectangles. The last boolean parameter
+  specifies if the rectangle should be filled or not.</p>
+
+<p>Consult the sections <a href="#wpngimage_drawing_images">Drawing images</a>,
+  <a href="#wpngimage_drawing_lines">Drawing lines</a> and
+  <a href="#wpngimage_drawing_rectangles">Drawing rectangles</a> for more information.</p>
+
 
 <!---------------------------------------------------------------------------->
 <h3 id="tutorial_color_spaces">Color spaces</h3>
@@ -939,12 +949,10 @@ void drawImage(int destX, int destY, const WPngImage&amp;,
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_drawing_lines">Drawing lines</h3>
 
-<pre>void drawHorLine(int x, int y, int length, Pixel8);
-void drawHorLine(int x, int y, int length, Pixel16);
-void drawHorLine(int x, int y, int length, PixelF);
-void drawVertLine(int x, int y, int length, Pixel8);
-void drawVertLine(int x, int y, int length, Pixel16);
-void drawVertLine(int x, int y, int length, PixelF);</pre>
+<pre>void putHorLine(int x, int y, int length, Pixel_t);
+void putVertLine(int x, int y, int length, Pixel_t);
+void drawHorLine(int x, int y, int length, Pixel_t);
+void drawVertLine(int x, int y, int length, Pixel_t);</pre>
 
 <p>These are simple convenience functions to draw horizontal and vertical lines.</p>
 
@@ -953,8 +961,34 @@ void drawVertLine(int x, int y, int length, PixelF);</pre>
   to be negative. (It will be interpreted appropriately, ie. going left or up from the
   starting coordinates.)</p>
 
-<p>The lines will be drawn onto this image using alpha blending. This makes a difference
-  if the specified pixel object has a non-full alpha.</p>
+<p>The difference between the <code>put</code> and <code>draw</code> versions is that the
+  former will simply assign the target pixels with the given parameter, while the latter will
+  use alpha blending. This makes a difference if the pixel object given as parameter has a
+  non-full alpha.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_drawing_rectangles">Drawing rectangles</h3>
+
+<pre>void putRect(int x, int y, int width, int height, Pixel_t, bool filled);
+void drawRect(int x, int y, int width, int height, Pixel_t, bool filled);</pre>
+
+<p>These are simple convenience functions to draw rectangles.</p>
+
+<p>If the <code>filled</code> parameter is <code>false</code> then only the outline of
+  the rectangle will be drawn. (Effectively this is a convenience shortcut for calling the
+  equivalent line drawing functions four times). Else a filled rectangle will be drawn.</p>
+
+<p>It's ok if the rectangle is partially (or completely) out of bounds. Only the parts that
+  end up inside this image will be drawn. It's also ok for the <code>width</code> and
+  <code>height</code> parameters to be negative. (They will be interpreted appropriately,
+  ie. going left or up from the starting coordinates.) If <code>width</code> or
+  <code>height</code> are 1 (or -1), then this is completely equivalent to calling the
+  correspondent line drawing function.</p>
+
+<p>The difference between the <code>put</code> and <code>draw</code> versions is that the
+  former will simply assign the target pixels with the given parameter, while the latter will
+  use alpha blending. This makes a difference if the pixel object given as parameter has a
+  non-full alpha.</p>
 
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_resize_canvas">Resize canvas</h3>

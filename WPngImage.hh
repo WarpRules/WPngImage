@@ -27,8 +27,8 @@
 #endif
 #endif
 
-#define WPNGIMAGE_VERSION 0x010101
-#define WPNGIMAGE_VERSION_STRING "1.1.1"
+#define WPNGIMAGE_VERSION 0x010200
+#define WPNGIMAGE_VERSION_STRING "1.2.0"
 #define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2016 Juha Nieminen"
 
 
@@ -233,6 +233,10 @@ class WPngImage
     void set(int x, int y, Pixel16);
     void set(int x, int y, PixelF);
 
+
+    //------------------------------------------------------------------------
+    // Drawing
+    //------------------------------------------------------------------------
     void putImage(int destX, int destY, const WPngImage&);
     void putImage(int destX, int destY, const WPngImage&,
                   int srcX, int srcY, int srcWidth, int srcHeight);
@@ -241,6 +245,12 @@ class WPngImage
     void drawImage(int destX, int destY, const WPngImage&,
                    int srcX, int srcY, int srcWidth, int srcHeight);
 
+    void putHorLine(int x, int y, int length, Pixel8);
+    void putHorLine(int x, int y, int length, Pixel16);
+    void putHorLine(int x, int y, int length, PixelF);
+    void putVertLine(int x, int y, int length, Pixel8);
+    void putVertLine(int x, int y, int length, Pixel16);
+    void putVertLine(int x, int y, int length, PixelF);
     void drawHorLine(int x, int y, int length, Pixel8);
     void drawHorLine(int x, int y, int length, Pixel16);
     void drawHorLine(int x, int y, int length, PixelF);
@@ -248,12 +258,22 @@ class WPngImage
     void drawVertLine(int x, int y, int length, Pixel16);
     void drawVertLine(int x, int y, int length, PixelF);
 
+    void putRect(int x, int y, int width, int height, Pixel8, bool filled);
+    void putRect(int x, int y, int width, int height, Pixel16, bool filled);
+    void putRect(int x, int y, int width, int height, PixelF, bool filled);
+    void drawRect(int x, int y, int width, int height, Pixel8, bool filled);
+    void drawRect(int x, int y, int width, int height, Pixel16, bool filled);
+    void drawRect(int x, int y, int width, int height, PixelF, bool filled);
+
     void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight);
     void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, Pixel8);
     void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, Pixel16);
     void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, PixelF);
 
 
+    //------------------------------------------------------------------------
+    // Raw data
+    //------------------------------------------------------------------------
     const Pixel8* getRawPixelData8() const;
     Pixel8* getRawPixelData8();
     const Pixel16* getRawPixelData16() const;
@@ -279,8 +299,9 @@ class WPngImage
 
     void putImage(int, int, const WPngImage&, int, int, int, int, bool);
     void manageCanvasResize(WPngImage&, int, int);
-    template<typename Pixel_t> void blendHorLine(int, int, int, const Pixel_t&);
-    template<typename Pixel_t> void blendVertLine(int, int, int, const Pixel_t&);
+    template<typename Pixel_t> void addHorLine(int, int, int, const Pixel_t&, bool);
+    template<typename Pixel_t> void addVertLine(int, int, int, const Pixel_t&, bool);
+    template<typename Pixel_t> void addRect(int, int, int, int, const Pixel_t&, bool, bool);
 
     static PixelFormat getPixelFormat(PngReadConvert, PngFileFormat);
     static PngFileFormat getClosestMatchFileFormat(PixelFormat);

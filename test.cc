@@ -1165,14 +1165,18 @@ static bool testDrawLine
 (WPngImage::PixelFormat imagePixelFormat, int imageWidth, int imageHeight,
  WPngImage::Pixel8 imagePixel,
  int lineX, int lineY, int lineLength, bool horizontal, Pixel_t linePixel,
- WPngImage::Pixel8 bgPixel, WPngImage::Pixel8 blendedPixel)
+ WPngImage::Pixel8 bgPixel, WPngImage::Pixel8 resultPixel, bool useBlending)
 {
     WPngImage image(imageWidth, imageHeight, imagePixel, imagePixelFormat);
 
-    if(horizontal)
+    if(horizontal && useBlending)
         image.drawHorLine(lineX, lineY, lineLength, linePixel);
-    else
+    else if(horizontal && !useBlending)
+        image.putHorLine(lineX, lineY, lineLength, linePixel);
+    else if(!horizontal && useBlending)
         image.drawVertLine(lineX, lineY, lineLength, linePixel);
+    else
+        image.putVertLine(lineX, lineY, lineLength, linePixel);
 
     if(lineLength < 0)
     {
@@ -1188,7 +1192,7 @@ static bool testDrawLine
             if((horizontal && y == lineY && x >= lineX && x < lineX + lineLength) ||
                (!horizontal && x == lineX && y >= lineY && y < lineY + lineLength))
             {
-                COMPAREP(pixel, blendedPixel);
+                COMPAREP(pixel, resultPixel);
             }
             else
             {
@@ -1276,7 +1280,7 @@ static bool testImages3()
     //------------------------------------------------------------------------
     const struct {
         WPngImage::PixelFormat pixelFormat;
-        WPngImage::Pixel8 imagePixel, linePixel, bgPixel, blendedPixel; }
+        WPngImage::Pixel8 imagePixel, linePixel, bgPixel, blendedPixel, assignedPixel; }
     kLineTestData[] =
     {
         {
@@ -1284,6 +1288,7 @@ static bool testImages3()
             WPngImage::Pixel8(123, 234, 21, 190),
             WPngImage::Pixel8(55, 66, 77, 255),
             WPngImage::Pixel8(123, 234, 21, 190),
+            WPngImage::Pixel8(55, 66, 77, 255),
             WPngImage::Pixel8(55, 66, 77, 255)
         },
         {
@@ -1291,42 +1296,48 @@ static bool testImages3()
             WPngImage::Pixel8(123, 234, 21, 190),
             WPngImage::Pixel8(55, 66, 77, 110),
             WPngImage::Pixel8(123, 234, 21, 190),
-            WPngImage::Pixel8(88, 149, 49, 218)
+            WPngImage::Pixel8(88, 149, 49, 218),
+            WPngImage::Pixel8(55, 66, 77, 110)
         },
         {
             WPngImage::kPixelFormat_RGBA16,
             WPngImage::Pixel8(120, 230, 210, 255),
             WPngImage::Pixel8(155, 166, 177, 100),
             WPngImage::Pixel8(120, 230, 210, 255),
-            WPngImage::Pixel8(134, 205, 197, 255)
+            WPngImage::Pixel8(134, 205, 197, 255),
+            WPngImage::Pixel8(155, 166, 177, 100)
         },
         {
             WPngImage::kPixelFormat_RGBAF,
             WPngImage::Pixel8(120, 230, 210, 255),
             WPngImage::Pixel8(155, 166, 177, 100),
             WPngImage::Pixel8(120, 230, 210, 255),
-            WPngImage::Pixel8(134, 205, 197, 255)
+            WPngImage::Pixel8(134, 205, 197, 255),
+            WPngImage::Pixel8(155, 166, 177, 100)
         },
         {
             WPngImage::kPixelFormat_GA8,
             WPngImage::Pixel8(120, 230, 210, 215),
             WPngImage::Pixel8(155, 166, 177, 60),
             WPngImage::Pixel8(211, 211, 211, 215),
-            WPngImage::Pixel8(199, 199, 199, 224)
+            WPngImage::Pixel8(199, 199, 199, 224),
+            WPngImage::Pixel8(165, 165, 165, 60)
         },
         {
             WPngImage::kPixelFormat_GA16,
             WPngImage::Pixel8(120, 230, 210, 215),
             WPngImage::Pixel8(155, 166, 177, 60),
             WPngImage::Pixel8(211, 211, 211, 215),
-            WPngImage::Pixel8(199, 199, 199, 225)
+            WPngImage::Pixel8(199, 199, 199, 225),
+            WPngImage::Pixel8(165, 165, 165, 60)
         },
         {
             WPngImage::kPixelFormat_GAF,
             WPngImage::Pixel8(120, 230, 210, 215),
             WPngImage::Pixel8(155, 166, 177, 60),
             WPngImage::Pixel8(211, 211, 211, 215),
-            WPngImage::Pixel8(199, 199, 199, 224)
+            WPngImage::Pixel8(199, 199, 199, 224),
+            WPngImage::Pixel8(165, 165, 165, 60)
         },
     };
 
@@ -1342,18 +1353,31 @@ static bool testImages3()
                 {
                     for(int horizontal = 0; horizontal < 2; ++horizontal)
                     {
-                        if(!testDrawLine(kLineTestData[testIndex].pixelFormat, 40, 40,
-                                         kLineTestData[testIndex].imagePixel,
-                                         lineX, lineY, lineLength, horizontal,
-                                         kLineTestData[testIndex].linePixel,
-                                         kLineTestData[testIndex].bgPixel,
-                                         kLineTestData[testIndex].blendedPixel))
+                        for(int useBlending = 0; useBlending < 2; ++useBlending)
                         {
-                            std::cout << "- With testIndex=" << testIndex
-                                      << ", lineLength=" << lineLength
-                                      << ", lineX=" << lineX << ", lineY=" << lineY
-                                      << ", horizontal=" << horizontal << "\n";
-                            ERRORRET;
+                            if(!testDrawLine(kLineTestData[testIndex].pixelFormat, 40, 40,
+                                             kLineTestData[testIndex].imagePixel,
+                                             lineX, lineY, lineLength, horizontal,
+                                             kLineTestData[testIndex].linePixel,
+                                             kLineTestData[testIndex].bgPixel,
+                                             useBlending ?
+                                             kLineTestData[testIndex].blendedPixel :
+                                             kLineTestData[testIndex].assignedPixel,
+                                             useBlending))
+                            {
+                                std::cout << "- With testIndex=" << testIndex
+                                          << ", lineLength=" << lineLength
+                                          << ", lineX=" << lineX << ", lineY=" << lineY
+                                          << ", horizontal=" << horizontal
+                                          << ", useBlending=" << useBlending << "\n"
+                                          << "  bgPixel=" << kLineTestData[testIndex].bgPixel
+                                          << ", linePixel=" << kLineTestData[testIndex].linePixel
+                                          << ", resultPixel="
+                                          << (useBlending ?
+                                              kLineTestData[testIndex].blendedPixel :
+                                              kLineTestData[testIndex].assignedPixel) << "\n";
+                                ERRORRET;
+                            }
                         }
                     }
                 }

@@ -1130,9 +1130,9 @@ struct WPngImage::PngDataBase
     virtual void copyAllPixelsTo(PngDataBase*) const = 0;
     virtual void copyPixelLineTo
     (std::size_t, std::size_t, PngDataBase*, std::size_t, bool) const = 0;
-    virtual void drawLine(std::size_t, std::size_t, std::size_t, const Pixel8&) = 0;
-    virtual void drawLine(std::size_t, std::size_t, std::size_t, const Pixel16&) = 0;
-    virtual void drawLine(std::size_t, std::size_t, std::size_t, const PixelF&) = 0;
+    virtual void addLine(std::size_t, std::size_t, std::size_t, const Pixel8&, bool) = 0;
+    virtual void addLine(std::size_t, std::size_t, std::size_t, const Pixel16&, bool) = 0;
+    virtual void addLine(std::size_t, std::size_t, std::size_t, const PixelF&, bool) = 0;
 };
 
 WPngImage::PngDataBase::PngDataBase(PixelFormat pixelFormat):
@@ -1166,10 +1166,11 @@ struct WPngImage::PngData: public PngDataBase
     virtual void copyAllPixelsTo(PngDataBase*) const;
     virtual void copyPixelLineTo
     (std::size_t, std::size_t, PngDataBase*, std::size_t, bool) const;
-    virtual void drawLine(std::size_t, std::size_t, std::size_t, const Pixel8&);
-    virtual void drawLine(std::size_t, std::size_t, std::size_t, const Pixel16&);
-    virtual void drawLine(std::size_t, std::size_t, std::size_t, const PixelF&);
+    virtual void addLine(std::size_t, std::size_t, std::size_t, const Pixel8&, bool);
+    virtual void addLine(std::size_t, std::size_t, std::size_t, const Pixel16&, bool);
+    virtual void addLine(std::size_t, std::size_t, std::size_t, const PixelF&, bool);
     void blendLine(std::size_t, std::size_t, std::size_t, const PixelData_t&);
+    void assignLine(std::size_t, std::size_t, std::size_t, const PixelData_t&);
 };
 
 
@@ -1347,24 +1348,44 @@ void WPngImage::PngData<PixelData_t>::blendLine
 }
 
 template<typename PixelData_t>
-void WPngImage::PngData<PixelData_t>::drawLine
-(std::size_t startIndex, std::size_t length, std::size_t step, const Pixel8& pixel)
+void WPngImage::PngData<PixelData_t>::assignLine
+(std::size_t startIndex, std::size_t length, std::size_t step, const PixelData_t& pixel)
 {
-    blendLine(startIndex, length, step, PixelData_t(pixel));
+    for(std::size_t i = 0; i < length; ++i, startIndex += step)
+        mPixelData[startIndex] = pixel;
 }
 
 template<typename PixelData_t>
-void WPngImage::PngData<PixelData_t>::drawLine
-(std::size_t startIndex, std::size_t length, std::size_t step, const Pixel16& pixel)
+void WPngImage::PngData<PixelData_t>::addLine
+(std::size_t startIndex, std::size_t length, std::size_t step, const Pixel8& pixel,
+ bool useBlending)
 {
-    blendLine(startIndex, length, step, PixelData_t(pixel));
+    if(useBlending)
+        blendLine(startIndex, length, step, PixelData_t(pixel));
+    else
+        assignLine(startIndex, length, step, PixelData_t(pixel));
 }
 
 template<typename PixelData_t>
-void WPngImage::PngData<PixelData_t>::drawLine
-(std::size_t startIndex, std::size_t length, std::size_t step, const PixelF& pixel)
+void WPngImage::PngData<PixelData_t>::addLine
+(std::size_t startIndex, std::size_t length, std::size_t step, const Pixel16& pixel,
+ bool useBlending)
 {
-    blendLine(startIndex, length, step, PixelData_t(pixel));
+    if(useBlending)
+        blendLine(startIndex, length, step, PixelData_t(pixel));
+    else
+        assignLine(startIndex, length, step, PixelData_t(pixel));
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::addLine
+(std::size_t startIndex, std::size_t length, std::size_t step, const PixelF& pixel,
+ bool useBlending)
+{
+    if(useBlending)
+        blendLine(startIndex, length, step, PixelData_t(pixel));
+    else
+        assignLine(startIndex, length, step, PixelData_t(pixel));
 }
 
 
@@ -1716,7 +1737,7 @@ void WPngImage::drawImage(int destX, int destY, const WPngImage& src,
 }
 
 template<typename Pixel_t>
-void WPngImage::blendHorLine(int x, int y, int length, const Pixel_t& pixel)
+void WPngImage::addHorLine(int x, int y, int length, const Pixel_t& pixel, bool useBlending)
 {
     if(!mData || length == 0 || y < 0 || y >= height()) return;
     if(length < 0) { length = -length; x = x - length + 1; }
@@ -1724,11 +1745,11 @@ void WPngImage::blendHorLine(int x, int y, int length, const Pixel_t& pixel)
     if(x < 0) { length += x; x = 0; }
     if(length <= 0) return;
     if(x + length > width()) { length = width() - x; }
-    mData->drawLine(std::size_t(y*width() + x), std::size_t(length), 1, pixel);
+    mData->addLine(std::size_t(y*width() + x), std::size_t(length), 1, pixel, useBlending);
 }
 
 template<typename Pixel_t>
-void WPngImage::blendVertLine(int x, int y, int length, const Pixel_t& pixel)
+void WPngImage::addVertLine(int x, int y, int length, const Pixel_t& pixel, bool useBlending)
 {
     if(!mData || length == 0 || x < 0 || x >= width()) return;
     if(length < 0) { length = -length; y = y - length + 1; }
@@ -1736,37 +1757,142 @@ void WPngImage::blendVertLine(int x, int y, int length, const Pixel_t& pixel)
     if(y < 0) { length += y; y = 0; }
     if(length <= 0) return;
     if(y + length > height()) { length = height() - y; }
-    mData->drawLine(std::size_t(y*width() + x), std::size_t(length), std::size_t(width()), pixel);
+    mData->addLine(std::size_t(y*width() + x), std::size_t(length), std::size_t(width()), pixel,
+                   useBlending);
+}
+
+void WPngImage::putHorLine(int x, int y, int length, Pixel8 pixel)
+{
+    addHorLine(x, y, length, pixel, false);
+}
+
+void WPngImage::putHorLine(int x, int y, int length, Pixel16 pixel)
+{
+    addHorLine(x, y, length, pixel, false);
+}
+
+void WPngImage::putHorLine(int x, int y, int length, PixelF pixel)
+{
+    addHorLine(x, y, length, pixel, false);
+}
+
+void WPngImage::putVertLine(int x, int y, int length, Pixel8 pixel)
+{
+    addVertLine(x, y, length, pixel, false);
+}
+
+void WPngImage::putVertLine(int x, int y, int length, Pixel16 pixel)
+{
+    addVertLine(x, y, length, pixel, false);
+}
+
+void WPngImage::putVertLine(int x, int y, int length, PixelF pixel)
+{
+    addVertLine(x, y, length, pixel, false);
 }
 
 void WPngImage::drawHorLine(int x, int y, int length, Pixel8 pixel)
 {
-    blendHorLine(x, y, length, pixel);
+    addHorLine(x, y, length, pixel, true);
 }
 
 void WPngImage::drawHorLine(int x, int y, int length, Pixel16 pixel)
 {
-    blendHorLine(x, y, length, pixel);
+    addHorLine(x, y, length, pixel, true);
 }
 
 void WPngImage::drawHorLine(int x, int y, int length, PixelF pixel)
 {
-    blendHorLine(x, y, length, pixel);
+    addHorLine(x, y, length, pixel, true);
 }
 
 void WPngImage::drawVertLine(int x, int y, int length, Pixel8 pixel)
 {
-    blendVertLine(x, y, length, pixel);
+    addVertLine(x, y, length, pixel, true);
 }
 
 void WPngImage::drawVertLine(int x, int y, int length, Pixel16 pixel)
 {
-    blendVertLine(x, y, length, pixel);
+    addVertLine(x, y, length, pixel, true);
 }
 
 void WPngImage::drawVertLine(int x, int y, int length, PixelF pixel)
 {
-    blendVertLine(x, y, length, pixel);
+    addVertLine(x, y, length, pixel, true);
+}
+
+template<typename Pixel_t>
+void WPngImage::addRect(int x, int y, int rectWidth, int rectHeight, const Pixel_t& pixel,
+                        bool filled, bool useBlending)
+{
+    if(!mData || rectWidth == 0 || rectHeight == 0) return;
+    if(rectWidth < 0) { rectWidth = -rectWidth; x = x - rectWidth + 1; }
+    if(rectHeight < 0) { rectHeight = -rectHeight; y = y - rectHeight + 1; }
+    if(rectWidth == 1) return addVertLine(x, y, rectHeight, pixel, useBlending);
+    if(rectHeight == 1) return addHorLine(x, y, rectWidth, pixel, useBlending);
+
+    if(!filled)
+    {
+        addHorLine(x, y, rectWidth, pixel, useBlending);
+        addHorLine(x, y + rectHeight - 1, rectWidth, pixel, useBlending);
+        addVertLine(x, y + 1, rectHeight - 2, pixel, useBlending);
+        addVertLine(x + rectWidth - 1, y + 1, rectHeight - 2, pixel, useBlending);
+    }
+    else
+    {
+        if(x >= width() || y >= height()) return;
+        if(x < 0) { rectWidth += x; x = 0; }
+        if(y < 0) { rectHeight += y; y = 0; }
+        if(rectWidth <= 0 || rectHeight <= 0) return;
+        if(x + rectWidth > width()) { rectWidth = width() - x; }
+        if(y + rectHeight > height()) { rectHeight = height() - y; }
+
+        const std::size_t indexBegin = std::size_t(y * width() + x);
+        const std::size_t step = std::size_t(width());
+
+        if(rectWidth == 1)
+        {
+            mData->addLine(indexBegin, std::size_t(rectHeight), step, pixel, useBlending);
+        }
+        else
+        {
+            const std::size_t indexEnd = indexBegin + std::size_t(rectHeight);
+            const std::size_t length = std::size_t(rectWidth);
+
+            for(std::size_t index = indexBegin; index < indexEnd; index += step)
+                mData->addLine(index, length, 1, pixel, useBlending);
+        }
+    }
+}
+
+void WPngImage::putRect(int x, int y, int width, int height, Pixel8 pixel, bool filled)
+{
+    addRect(x, y, width, height, pixel, filled, false);
+}
+
+void WPngImage::putRect(int x, int y, int width, int height, Pixel16 pixel, bool filled)
+{
+    addRect(x, y, width, height, pixel, filled, false);
+}
+
+void WPngImage::putRect(int x, int y, int width, int height, PixelF pixel, bool filled)
+{
+    addRect(x, y, width, height, pixel, filled, false);
+}
+
+void WPngImage::drawRect(int x, int y, int width, int height, Pixel8 pixel, bool filled)
+{
+    addRect(x, y, width, height, pixel, filled, true);
+}
+
+void WPngImage::drawRect(int x, int y, int width, int height, Pixel16 pixel, bool filled)
+{
+    addRect(x, y, width, height, pixel, filled, true);
+}
+
+void WPngImage::drawRect(int x, int y, int width, int height, PixelF pixel, bool filled)
+{
+    addRect(x, y, width, height, pixel, filled, true);
 }
 
 void WPngImage::resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight)
