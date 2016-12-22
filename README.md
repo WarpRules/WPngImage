@@ -48,4 +48,16 @@ else
 }
 ```
 
-(Note that in this example the original bit depth and color space (ie. rgb or gray) will be automatically preserved. These can be changed when loading or when saving, if needed.)
+(Note that in the above example the original bit depth and color space (ie. rgb or gray) will be automatically preserved. These can be changed when loading or when saving, if needed.)
+
+Shift the hue of an image by 90 degrees (while preserving its saturation and lightness):
+
+```c++
+for(int y = 0; y < image.height(); ++y)
+    for(int x = 0; x < image.width(); ++x)
+    {
+        WPngImage::HSL hsl = image.getF(x, y).toHSL();
+        hsl.h += 0.25;
+        image.set(x, y, WPngImage::PixelF(hsl));
+    }
+```
