@@ -1203,6 +1203,46 @@ static bool testDrawLine
     return true;
 }
 
+template<typename Pixel_t>
+static bool testDrawRect
+(WPngImage::PixelFormat imagePixelFormat, int imageWidth, int imageHeight,
+ WPngImage::Pixel8 imagePixel,
+ int rectX, int rectY, int rectWidth, int rectHeight, bool filled, Pixel_t rectPixel,
+ WPngImage::Pixel8 bgPixel, WPngImage::Pixel8 resultPixel, bool useBlending)
+{
+    WPngImage image(imageWidth, imageHeight, imagePixel, imagePixelFormat);
+
+    if(useBlending)
+        image.drawRect(rectX, rectY, rectWidth, rectHeight, rectPixel, filled);
+    else
+        image.putRect(rectX, rectY, rectWidth, rectHeight, rectPixel, filled);
+
+    if(rectWidth < 0) { rectWidth = -rectWidth; rectX = rectX - rectWidth + 1; }
+    if(rectHeight < 0) { rectHeight = -rectHeight; rectY = rectY - rectHeight + 1; }
+
+    const int maxX = rectX + rectWidth - 1, maxY = rectY + rectHeight - 1;
+
+    for(int y = 0; y < imageHeight; ++y)
+        for(int x = 0; x < imageWidth; ++x)
+        {
+            const WPngImage::Pixel8 pixel = image.get8(x, y);
+            const bool ok = rectWidth != 0 && rectHeight != 0 &&
+                ((filled && x >= rectX && x <= maxX && y >= rectY && y <= maxY) ||
+                 (!filled && (((x == rectX || x == maxX) && y >= rectY && y <= maxY) ||
+                              ((y == rectY || y == maxY) && x >= rectX && x <= maxX))))?
+                compare(__LINE__, pixel, resultPixel) :
+                compare(__LINE__, pixel, bgPixel);
+
+            if(!ok)
+            {
+                std::cout << "- At x=" << x << ", y=" << y << "\n";
+                return false;
+            }
+        }
+
+    return true;
+}
+
 static bool testImages3()
 {
     //------------------------------------------------------------------------
@@ -1341,23 +1381,26 @@ static bool testImages3()
         },
     };
 
+    const int imageWidth = 8, imageHeight = 9, maxLineLength = 12;
+
     for(unsigned testIndex = 0;
         testIndex < sizeof(kLineTestData)/sizeof(*kLineTestData);
         ++testIndex)
     {
-        for(int lineLength = -60; lineLength < 60; lineLength += 3)
+        for(int useBlending = 0; useBlending < 2; ++useBlending)
         {
-            for(int lineX = -5; lineX < 45; lineX += 4)
+            for(int startX = -2; startX < imageWidth + 1; ++startX)
             {
-                for(int lineY = -5; lineY < 45; lineY += 3)
+                for(int startY = -2; startY < imageHeight + 1; ++startY)
                 {
-                    for(int horizontal = 0; horizontal < 2; ++horizontal)
+                    for(int lineLength = -maxLineLength; lineLength <= maxLineLength; ++lineLength)
                     {
-                        for(int useBlending = 0; useBlending < 2; ++useBlending)
+                        for(int horizontal = 0; horizontal < 2; ++horizontal)
                         {
-                            if(!testDrawLine(kLineTestData[testIndex].pixelFormat, 40, 40,
+                            if(!testDrawLine(kLineTestData[testIndex].pixelFormat,
+                                             imageWidth, imageHeight,
                                              kLineTestData[testIndex].imagePixel,
-                                             lineX, lineY, lineLength, horizontal,
+                                             startX, startY, lineLength, horizontal,
                                              kLineTestData[testIndex].linePixel,
                                              kLineTestData[testIndex].bgPixel,
                                              useBlending ?
@@ -1367,7 +1410,7 @@ static bool testImages3()
                             {
                                 std::cout << "- With testIndex=" << testIndex
                                           << ", lineLength=" << lineLength
-                                          << ", lineX=" << lineX << ", lineY=" << lineY
+                                          << ", startX=" << startX << ", startY=" << startY
                                           << ", horizontal=" << horizontal
                                           << ", useBlending=" << useBlending << "\n"
                                           << "  bgPixel=" << kLineTestData[testIndex].bgPixel
@@ -1377,6 +1420,41 @@ static bool testImages3()
                                               kLineTestData[testIndex].blendedPixel :
                                               kLineTestData[testIndex].assignedPixel) << "\n";
                                 ERRORRET;
+                            }
+                        }
+                    }
+
+                    for(int height = -maxLineLength; height <= maxLineLength; ++height)
+                    {
+                        for(int width = -maxLineLength; width <= maxLineLength; ++width)
+                        {
+                            for(int filled = 0; filled < 2; ++filled)
+                            {
+                                if(!testDrawRect(kLineTestData[testIndex].pixelFormat,
+                                                 imageWidth, imageHeight,
+                                                 kLineTestData[testIndex].imagePixel,
+                                                 startX, startY, width, height, filled,
+                                                 kLineTestData[testIndex].linePixel,
+                                                 kLineTestData[testIndex].bgPixel,
+                                                 useBlending ?
+                                                 kLineTestData[testIndex].blendedPixel :
+                                                 kLineTestData[testIndex].assignedPixel,
+                                                 useBlending))
+                                {
+                                    std::cout << "- With testIndex=" << testIndex
+                                              << ", startX=" << startX << ", startY=" << startY
+                                              << ", width=" << width << ", height=" << height
+                                              << ", filled=" << filled
+                                              << ", useBlending=" << useBlending << "\n"
+                                              << "  bgPixel=" << kLineTestData[testIndex].bgPixel
+                                              << ", linePixel="
+                                              << kLineTestData[testIndex].linePixel
+                                              << ", resultPixel="
+                                              << (useBlending ?
+                                                  kLineTestData[testIndex].blendedPixel :
+                                                  kLineTestData[testIndex].assignedPixel) << "\n";
+                                    ERRORRET;
+                                }
                             }
                         }
                     }

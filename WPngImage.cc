@@ -1856,7 +1856,7 @@ void WPngImage::addRect(int x, int y, int rectWidth, int rectHeight, const Pixel
         }
         else
         {
-            const std::size_t indexEnd = indexBegin + std::size_t(rectHeight);
+            const std::size_t indexEnd = indexBegin + step * std::size_t(rectHeight);
             const std::size_t length = std::size_t(rectWidth);
 
             for(std::size_t index = indexBegin; index < indexEnd; index += step)
