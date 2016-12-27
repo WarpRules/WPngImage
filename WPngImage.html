@@ -661,9 +661,9 @@ void newImage(int width, int height, PixelF, PixelFormat = kPixelFormat_RGBAF);<
                    PngReadConvert = kPngReadConvert_closestMatch);
 IOStatus loadImage(const char* fileName, PixelFormat);
 
-IOStatus loadImage(const std::string& fileName,
+IOStatus loadImage(const std::string&amp; fileName,
                    PngReadConvert = kPngReadConvert_closestMatch);
-IOStatus loadImage(const std::string& fileName, PixelFormat);</pre>
+IOStatus loadImage(const std::string&amp; fileName, PixelFormat);</pre>
 
 <p>The PNG file specified by <code>fileName</code> will be attempted to be loaded.
   The second parameter can be a value of type <code>WPngImage::PngReadConvert</code>, which
@@ -721,9 +721,9 @@ IOStatus loadImageFromRAM(const void* pngData, std::size_t pngDataSize, PixelFor
                    PngWriteConvert = kPngWriteConvert_closestMatch) const;
 IOStatus saveImage(const char* fileName, PngFileFormat) const;
 
-IOStatus saveImage(const std::string& fileName,
+IOStatus saveImage(const std::string&amp; fileName,
                    PngWriteConvert = kPngWriteConvert_closestMatch) const;
-IOStatus saveImage(const std::string& fileName, PngFileFormat) const;</pre>
+IOStatus saveImage(const std::string&amp; fileName, PngFileFormat) const;</pre>
 
 <p>Save the current image data to a PNG file. (If there is currently no image data,
   does nothing.) A specific PNG pixel format can be specified as a second parameter (see section
@@ -1110,12 +1110,12 @@ explicit Pixel8(PixelF);</pre>
   Consult the section <a href="#pixel_color_space_conversions">Color space conversions</a>
   for more on this.</p>
 
-<pre>explicit Pixel_t(const HSV&);
-explicit Pixel_t(const HSL&);
-explicit Pixel_t(const XYZ&);
-explicit Pixel_t(const YXY&);
-explicit Pixel_t(const CMY&);
-explicit Pixel_t(const CMYK&);</pre>
+<pre>explicit Pixel_t(const HSV&amp;);
+explicit Pixel_t(const HSL&amp;);
+explicit Pixel_t(const XYZ&amp;);
+explicit Pixel_t(const YXY&amp;);
+explicit Pixel_t(const CMY&amp;);
+explicit Pixel_t(const CMYK&amp;);</pre>
 
 <p>Pixel values can also be set using these convenience functions. They are equivalent
   to the constructors, except that the versions not taking an alpha value will leave
