@@ -7,6 +7,7 @@
 #include "WPngImage.hh"
 #include "lodepng.h"
 #include <cstdio>
+#include <cerrno>
 #include <algorithm>
 #include <cassert>
 
@@ -67,7 +68,7 @@ WPngImage::IOStatus WPngImage::performLoadImage
 {
     FilePtr iFile;
     iFile.fp = std::fopen(fileName, "rb");
-    if(!iFile.fp) return kIOStatus_Error_CantOpenFile;
+    if(!iFile.fp) return IOStatus(kIOStatus_Error_CantOpenFile, errno);
 
     std::fseek(iFile.fp, 0, SEEK_END);
     const std::size_t fileSize = std::size_t(std::ftell(iFile.fp));
@@ -147,13 +148,14 @@ WPngImage::IOStatus WPngImage::performLoadImageFromRAM
 //----------------------------------------------------------------------------
 // Save PNG image to file
 //----------------------------------------------------------------------------
-WPngImage::IOStatus WPngImage::saveImage(const char* fileName, PngFileFormat fileFormat) const
+WPngImage::IOStatus
+WPngImage::performSaveImage(const char* fileName, PngFileFormat fileFormat) const
 {
     if(!mData) return kIOStatus_Ok;
 
     FilePtr oFile;
     oFile.fp = std::fopen(fileName, "wb");
-    if(!oFile.fp) return kIOStatus_Error_CantOpenFile;
+    if(!oFile.fp) return IOStatus(kIOStatus_Error_CantOpenFile, errno);
 
     std::vector<unsigned char> buffer;
     const IOStatus status = performSaveImageToRAM(&buffer, 0, fileFormat);

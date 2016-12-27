@@ -6,6 +6,7 @@
 
 #include "WPngImage.hh"
 #include <cstdio>
+#include <cerrno>
 #include <cstring>
 #include <cassert>
 #include <png.h>
@@ -192,7 +193,7 @@ WPngImage::IOStatus WPngImage::performLoadImage
 {
     FilePtr iFile;
     iFile.fp = std::fopen(fileName, "rb");
-    if(!iFile.fp) return kIOStatus_Error_CantOpenFile;
+    if(!iFile.fp) return IOStatus(kIOStatus_Error_CantOpenFile, errno);
 
     png_byte header[8] = {};
     std::fread(header, 1, 8, iFile.fp);
@@ -339,13 +340,14 @@ WPngImage::IOStatus WPngImage::writePngData(PngStructs& structs, PngFileFormat f
 //----------------------------------------------------------------------------
 // Save PNG image to file
 //----------------------------------------------------------------------------
-WPngImage::IOStatus WPngImage::saveImage(const char* fileName, PngFileFormat fileFormat) const
+WPngImage::IOStatus
+WPngImage::performSaveImage(const char* fileName, PngFileFormat fileFormat) const
 {
     if(!mData) return kIOStatus_Ok;
 
     FilePtr oFile;
     oFile.fp = std::fopen(fileName, "wb");
-    if(!oFile.fp) return kIOStatus_Error_CantOpenFile;
+    if(!oFile.fp) return IOStatus(kIOStatus_Error_CantOpenFile, errno);
 
     PngStructs structs(false);
     if(!structs.mPngInfoPtr) return kIOStatus_Error_PNGLibraryError;

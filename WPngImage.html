@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage 1.2.0 documentation</title>
+  <title>WPngImage 1.2.1 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -79,7 +79,7 @@ code
 </head>
 
 <body>
-<h1>WPngImage 1.2.0 documentation</h1>
+<h1>WPngImage 1.2.1 documentation</h1>
 
 <p><code>WPngImage</code> is a C++ library to manage images in PNG format. It can be used
   as a completely stand-alone library using the <a href="http://lodev.org/lodepng/">lodepng</a>
@@ -229,21 +229,17 @@ WPngImage image7(256, 256, WPngImage::kPixelFormat_GAF);</pre>
 <h3 id="tutorial_load_save_png">Loading, changing and saving a PNG image</h3>
 
 <p>This example will load a png image, invert it (ie. make it a negative) and
-  save it to another file (error handling is omitted for brevity).</p>
+  save it to another file.</p>
 
 <pre>WPngImage image;
-auto status = image.loadImage("photo.png");
+const auto status = image.loadImage("photo.png");
+if(status.printErrorMsg()) return EXIT_FAILURE;
 
-if(status != WPngImage::kIOStatus_Ok)
-{ <span class="comment">/* handle error */</span> }
-else
-{
-    for(int y = 0; y &lt; image.height(); ++y)
-        for(int x = 0; x &lt; image.width(); ++x)
-            image.set(x, y, 65535 - image.get16(x, y));
+for(int y = 0; y &lt; image.height(); ++y)
+    for(int x = 0; x &lt; image.width(); ++x)
+        image.set(x, y, 65535 - image.get16(x, y));
 
-    image.saveImage("photo_negative.png");
-}</pre>
+image.saveImage("photo_negative.png");</pre>
 
 <p>The <code>get16()</code> function will return an object of type
   <code>WPngImage::Pixel16</code>, which is a 16-bits-per-channel pixel type (ie. with
@@ -294,6 +290,9 @@ image.set(x, y, pixel);</pre>
   being currently used. The image can be saved with another pixel format by specifying it to
   the <code>saveImage()</code> function. See the section
   <a href="#wpngimage_save_file">Saving</a> for details.</p>
+
+<p>If the default error handling does not suffice, more options are available. Consult the
+  section <a href="#wpngimage_iostatus">IOStatus</a> for details.</p>
 
 <!---------------------------------------------------------------------------->
 <h3 id="tutorial_drawing">Drawing images, lines and rectangles</h3>
@@ -371,17 +370,13 @@ image.drawRectangle(100, 200, 100, 50, WPngImage::Pixel8(255, 255, 0, 120), true
 
 <pre>WPngImage image;
 auto status = image.loadImage("photo.png");
+if(status.printErrorMsg()) return EXIT_FAILURE;
 
-if(status != WPngImage::kIOStatus_Ok)
-{ <span class="comment">/* handle error */</span> }
-else
-{
-    for(int y = 0; y &lt; image.height(); ++y)
-        for(int x = 0; x &lt; image.width(); ++x)
-            image.set(x, y, image.get16(x, y).grayCIEPixel());
+for(int y = 0; y &lt; image.height(); ++y)
+    for(int x = 0; x &lt; image.width(); ++x)
+        image.set(x, y, image.get16(x, y).grayCIEPixel());
 
-    image.saveImage("photo_grayscale.png");
-}</pre>
+image.saveImage("photo_grayscale.png");</pre>
 
 <p>(Note that you can also use <code>grayPixel()</code> instead of <code>grayCIEPixel()</code>,
   but the latter is more accurate, although a bit less efficient.)</p>
@@ -801,30 +796,51 @@ IOStatus saveImageToRAM(ByteStreamOutputFunc, PngFileFormat) const;</pre>
 <h3 id="wpngimage_iostatus">IOStatus</h3>
 
 <p><code>WPngImage::IOStatus</code> is an object returned by the loading and saving functions.
-  It's implicitly convertible to a value of the enumerated type
+  It contains the following members:</p>
+
+<pre>IOStatusValue value;
+std::string fileName, pngLibErrorMsg;
+int errnoValue;</pre>
+
+<p>It's implicitly convertible to a value of the enumerated type
   <code>WPngImage::IOStatusValue</code>, which has the following possible values:</p>
 
 <ul>
   <li><code>WPngImage::kIOStatus_Ok</code>: The operation completed successfully.</li>
   <li><code>WPngImage::kIOStatus_Error_CantOpenFile</code>: The file could not be opened
-    (for either loading or saving). The standard library macro <code>errno</code> can be checked
-    for the more specific reason (most likely case is that the file doesn't exist, in the case
-    of loading.)</li>
+    (for either loading or saving). The value of <code>errno</code> will be stored in the
+    <code>errnoValue</code> member variable and can be checked for the more specific reason
+    (most likely case is that the file doesn't exist, in the case of loading.)</li>
   <li><code>WPngImage::kIOStatus_Error_NotPNG</code>: The signature in the file/data fails check.
     This is most probably not a PNG file at all.</li>
   <li><code>WPngImage::kIOStatus_Error_PNGLibraryError</code>: libpng returned an error while
     decoding or encoding the data.</li>
 </ul>
 
-<p>In the last case, the member <code>std::string</code> variable <code>pngLibErrorMsg</code>
-  of the <code>WPngImage::IOStatus</code> object, if not empty, will contain the error message
+<p>In the last case, <code>pngLibErrorMsg</code>, if not empty, will contain the error message
   returned by libpng. (For example, if the PNG data was corrupted, the message will be something
   like "IDAT: CRC error".)</p>
 
-<p>A simplistic error handling routine can simply check if the return value is equal to
-  <code>WPngImage::kIOStatus_Ok</code>, and consider it an error otherwise.</p>
+<p>Note that the <code>fileName</code> member variable will contain the file name given as
+  parameter to <code>loadImage()</code> or <code>saveImage()</code> only in case of error.
+  If there was no error, or the image was loaded from or saved to memory, it will be empty.
+  (This is done for efficiency.)</p>
 
-<p>Example of how to handle the return value in a more detailed manner:</p>
+<p><code>WPngImage::IOStatus</code> also has a utility member function for simplified error
+  message printing:</p>
+
+<pre>bool printErrorMsg(std::ostream&amp; = std::cerr) const;</pre>
+
+<p>If there was an error, it will print an error message (in English) to the given stream
+  (by default <code>std::cerr</code> if not specified) and return true. If there was no error,
+  it will return false. It can, thus, be used like:</p>
+
+<pre>const auto status = image.loadImage("photo.png");
+if(status.printErrorMsg()) return false;</pre>
+
+<p>If this does not suffice for the application, the status value can be used for custom
+  error handling. This is an example (which is a simplified version of what the
+  <code>printErrorMsg()</code> function itself does):</p>
 
 <pre>const auto status = image.loadImage(filename);
 switch(status)
@@ -839,7 +855,7 @@ switch(status)
 
  case WPngImage::kIOStatus_Error_PNGLibraryError:
     std::cerr &lt;&lt; "Error reading " &lt;&lt; filename;
-    if(!status.pngLibErrorMsg.empty());
+    if(!status.pngLibErrorMsg.empty())
         std::cerr &lt;&lt; ": " &lt;&lt; status.pngLibErrorMsg;
     std::cerr &lt;&lt; "\n";
     break;

@@ -1,5 +1,5 @@
 # WPngImage
-WPngImage v1.2.0 is a C++ library to manage images in PNG format. It can be used as a completely stand-alone library using the [lodepng](http://lodev.org/lodepng/) library (included), or using the official [libpng](http://www.libpng.org/) library.
+WPngImage v1.2.1 is a C++ library to manage images in PNG format. It can be used as a completely stand-alone library using the [lodepng](http://lodev.org/lodepng/) library (included), or using the official [libpng](http://www.libpng.org/) library.
 
 The main goal of WPngImage is to be as easy and simple to use as possible, while still being expressive and supporting a variety of PNG pixel formats. The design philosophy of this library is to aim for simplicity and ease-of-use, using a "plug&play" principle: Just a couple of source files. Simply add them to your project, and that's it. No myriads of source files, no configuration scripts and makefiles necessary.
 
@@ -34,18 +34,14 @@ Load a PNG file, invert it (ie. calculate its negative), and save it to another 
 
 ```c++
 WPngImage image;
-auto status = image.loadImage("photo.png");
+const auto status = image.loadImage("photo.png");
+if(status.printErrorMsg()) return EXIT_FAILURE;
 
-if(status != WPngImage::kIOStatus_Ok)
-{ /* handle error */ }
-else
-{
-    for(int y = 0; y < image.height(); ++y)
-        for(int x = 0; x < image.width(); ++x)
-            image.set(x, y, 65535 - image.get16(x, y));
+for(int y = 0; y < image.height(); ++y)
+    for(int x = 0; x < image.width(); ++x)
+        image.set(x, y, 65535 - image.get16(x, y));
 
-    image.saveImage("photo_negative.png");
-}
+image.saveImage("photo_negative.png");
 ```
 
 (Note that in the above example the original bit depth and color space (ie. rgb or gray) will be automatically preserved. These can be changed when loading or when saving, if needed.)

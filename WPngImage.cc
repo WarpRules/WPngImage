@@ -9,6 +9,7 @@
 #include <cmath>
 #include <algorithm>
 #include <limits>
+#include <cstring>
 
 typedef WPngImage::Byte Byte;
 typedef WPngImage::UInt16 UInt16;
@@ -2060,22 +2061,26 @@ WPngImage::PixelFormat WPngImage::getPixelFormat(WPngImage::PngReadConvert conve
 //----------------------------------------------------------------------------
 WPngImage::IOStatus WPngImage::loadImage(const char* fileName, PngReadConvert conversion)
 {
-    return performLoadImage(fileName, true, conversion, kPixelFormat_RGBA8);
+    IOStatus status = performLoadImage(fileName, true, conversion, kPixelFormat_RGBA8);
+    if(status != kIOStatus_Ok) status.fileName = fileName;
+    return status;
 }
 
 WPngImage::IOStatus WPngImage::loadImage(const char* fileName, PixelFormat pixelFormat)
 {
-    return performLoadImage(fileName, false, kPngReadConvert_closestMatch, pixelFormat);
+    IOStatus status = performLoadImage(fileName, false, kPngReadConvert_closestMatch, pixelFormat);
+    if(status != kIOStatus_Ok) status.fileName = fileName;
+    return status;
 }
 
 WPngImage::IOStatus WPngImage::loadImage(const std::string& fileName, PngReadConvert conversion)
 {
-    return performLoadImage(fileName.c_str(), true, conversion, kPixelFormat_RGBA8);
+    return loadImage(fileName.c_str(), conversion);
 }
 
 WPngImage::IOStatus WPngImage::loadImage(const std::string& fileName, PixelFormat pixelFormat)
 {
-    return performLoadImage(fileName.c_str(), false, kPngReadConvert_closestMatch, pixelFormat);
+    return loadImage(fileName.c_str(), pixelFormat);
 }
 
 
@@ -2194,11 +2199,20 @@ WPngImage::PngFileFormat WPngImage::getFileFormat
     return originalFileFormat;
 }
 
+WPngImage::IOStatus WPngImage::saveImage(const char* fileName, PngFileFormat fileFormat) const
+{
+    IOStatus status = performSaveImage(fileName, fileFormat);
+    if(status != kIOStatus_Ok) status.fileName = fileName;
+    return status;
+}
+
 WPngImage::IOStatus WPngImage::saveImage
 (const char* fileName, PngWriteConvert conversion) const
 {
-    return saveImage
+    IOStatus status = performSaveImage
         (fileName, getFileFormat(conversion, originalFileFormat(), currentPixelFormat()));
+    if(status != kIOStatus_Ok) status.fileName = fileName;
+    return status;
 }
 
 WPngImage::IOStatus WPngImage::saveImage
@@ -2241,4 +2255,36 @@ WPngImage::IOStatus WPngImage::saveImageToRAM(ByteStreamOutputFunc destFunc,
 {
     return saveImageToRAM
         (destFunc, getFileFormat(conversion, originalFileFormat(), currentPixelFormat()));
+}
+
+
+//============================================================================
+// WPngImage::IOStatus implementations
+//============================================================================
+bool WPngImage::IOStatus::printErrorMsg(std::ostream& os) const
+{
+    switch(value)
+    {
+      case WPngImage::kIOStatus_Ok:
+          return false;
+
+      case WPngImage::kIOStatus_Error_CantOpenFile:
+          os << fileName << ": " << std::strerror(errnoValue) << "\n";
+          return true;
+
+      case WPngImage::kIOStatus_Error_NotPNG:
+          if(fileName.empty()) os << "Input data is not a PNG image.\n";
+          else os << fileName << " is not a PNG file.\n";
+          return true;
+
+      case WPngImage::kIOStatus_Error_PNGLibraryError:
+          os << "Error reading ";
+          if(fileName.empty()) os << "input PNG data";
+          else os << fileName;
+          if(!pngLibErrorMsg.empty())
+              os << ": " << pngLibErrorMsg;
+          os << "\n";
+          return true;
+    }
+    return false;
 }

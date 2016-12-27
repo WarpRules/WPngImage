@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include <cstddef>
+#include <iostream>
 #if !WPNGIMAGE_RESTRICT_TO_CPP98
 #include <cstdint>
 #include <functional>
@@ -27,8 +28,8 @@
 #endif
 #endif
 
-#define WPNGIMAGE_VERSION 0x010200
-#define WPNGIMAGE_VERSION_STRING "1.2.0"
+#define WPNGIMAGE_VERSION 0x010201
+#define WPNGIMAGE_VERSION_STRING "1.2.1"
 #define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2016 Juha Nieminen"
 
 
@@ -152,11 +153,17 @@ class WPngImage
     struct IOStatus
     {
         IOStatusValue value;
-        std::string pngLibErrorMsg;
+        std::string fileName, pngLibErrorMsg;
+        int errnoValue;
 
-        IOStatus(IOStatusValue v): value(v), pngLibErrorMsg() {}
-        IOStatus(IOStatusValue v, const std::string& m): value(v), pngLibErrorMsg(m) {}
+        IOStatus(IOStatusValue v): value(v), errnoValue(0) {}
+        IOStatus(IOStatusValue v, int ev): value(v), errnoValue(ev) {}
+        IOStatus(IOStatusValue v, const std::string& m):
+            value(v), pngLibErrorMsg(m), errnoValue(0) {}
+
         operator IOStatusValue() const { return value; }
+
+        bool printErrorMsg(std::ostream& = std::cerr) const;
     };
 
     IOStatus loadImage(const char* fileName, PngReadConvert = kPngReadConvert_closestMatch);
@@ -317,6 +324,7 @@ class WPngImage
     IOStatus performLoadImageFromRAM(const void*, std::size_t, bool, PngReadConvert, PixelFormat);
     IOStatus writePngData(PngStructs&, PngFileFormat) const;
     void performWritePngData(PngStructs&, PngFileFormat, int, int, int) const;
+    IOStatus performSaveImage(const char*, PngFileFormat) const;
     IOStatus performSaveImageToRAM
     (std::vector<unsigned char>*, ByteStreamOutputFunc, PngFileFormat) const;
 };

@@ -2042,6 +2042,13 @@ static bool checkIOStatus(WPngImage::IOStatus status, bool saving)
                   << status.pngLibErrorMsg << "\"\n";
         ERRORRET;
     }
+    else if(!status.fileName.empty())
+    {
+        std::cout << (saving ? "Saving to" : "Loading")
+                  << " PNG file was successful, but status.fileName is not empty: \""
+                  << status.fileName << "\"\n";
+        ERRORRET;
+    }
     return true;
 }
 
@@ -2298,6 +2305,20 @@ static bool testSavingAndLoading()
     if(!testSavingAndLoading<WPngImage::PixelF>
        (WPngImage::kPixelFormat_RGBAF, WPngImage::kPngFileFormat_RGBA16,
         94, 124, 1.0f, &WPngImage::getF)) ERRORRET;
+
+    WPngImage image;
+    const WPngImage::IOStatus status = image.loadImage("xyz");
+    if(status != WPngImage::kIOStatus_Error_CantOpenFile)
+    {
+        std::cout << "Trying to open an inexistent file did not return proper status.\n";
+        ERRORRET;
+    }
+    if(status.fileName != "xyz")
+    {
+        std::cout << "Trying to open an inexistent file did not assign the proper fileName value: "
+            "\"" << status.fileName << "\" instead of \"xyz\"\n";
+        ERRORRET;
+    }
 
     return true;
 }
