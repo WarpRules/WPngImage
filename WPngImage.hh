@@ -28,8 +28,8 @@
 #endif
 #endif
 
-#define WPNGIMAGE_VERSION 0x010201
-#define WPNGIMAGE_VERSION_STRING "1.2.1"
+#define WPNGIMAGE_VERSION 0x010202
+#define WPNGIMAGE_VERSION_STRING "1.2.2"
 #define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2016 Juha Nieminen"
 
 
@@ -240,10 +240,18 @@ class WPngImage
     void set(int x, int y, Pixel16);
     void set(int x, int y, PixelF);
 
+    void fill(Pixel8);
+    void fill(Pixel16);
+    void fill(PixelF);
+
 
     //------------------------------------------------------------------------
     // Drawing
     //------------------------------------------------------------------------
+    void drawPixel(int x, int y, Pixel8);
+    void drawPixel(int x, int y, Pixel16);
+    void drawPixel(int x, int y, PixelF);
+
     void putImage(int destX, int destY, const WPngImage&);
     void putImage(int destX, int destY, const WPngImage&,
                   int srcX, int srcY, int srcWidth, int srcHeight);

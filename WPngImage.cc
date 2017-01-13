@@ -1127,6 +1127,12 @@ struct WPngImage::PngDataBase
     virtual void setPixel(std::size_t, const PixelG8&) = 0;
     virtual void setPixel(std::size_t, const PixelG16&) = 0;
     virtual void setPixel(std::size_t, const PixelGF&) = 0;
+    virtual void drawPixel(std::size_t, const Pixel8&) = 0;
+    virtual void drawPixel(std::size_t, const Pixel16&) = 0;
+    virtual void drawPixel(std::size_t, const PixelF&) = 0;
+    virtual void fill(const Pixel8&) = 0;
+    virtual void fill(const Pixel16&) = 0;
+    virtual void fill(const PixelF&) = 0;
     virtual void copyPixelTo(std::size_t, PngDataBase*, std::size_t) const = 0;
     virtual void copyAllPixelsTo(PngDataBase*) const = 0;
     virtual void copyPixelLineTo
@@ -1163,6 +1169,12 @@ struct WPngImage::PngData: public PngDataBase
     virtual void setPixel(std::size_t, const PixelG8&);
     virtual void setPixel(std::size_t, const PixelG16&);
     virtual void setPixel(std::size_t, const PixelGF&);
+    virtual void drawPixel(std::size_t, const Pixel8&);
+    virtual void drawPixel(std::size_t, const Pixel16&);
+    virtual void drawPixel(std::size_t, const PixelF&);
+    virtual void fill(const Pixel8&);
+    virtual void fill(const Pixel16&);
+    virtual void fill(const PixelF&);
     virtual void copyPixelTo(std::size_t, PngDataBase*, std::size_t) const;
     virtual void copyAllPixelsTo(PngDataBase*) const;
     virtual void copyPixelLineTo
@@ -1284,6 +1296,46 @@ void WPngImage::PngData<PixelData_t>::setPixel(std::size_t index, const PixelGF&
 {
     assignPixel(mPixelData[index], pixel);
 }
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::drawPixel(std::size_t index, const Pixel8& pixel)
+{
+    mPixelData[index].blendWith(PixelData_t(pixel));
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::drawPixel(std::size_t index, const Pixel16& pixel)
+{
+    mPixelData[index].blendWith(PixelData_t(pixel));
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::drawPixel(std::size_t index, const PixelF& pixel)
+{
+    mPixelData[index].blendWith(PixelData_t(pixel));
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::fill(const Pixel8& pixel)
+{
+    for(std::size_t i = 0; i < mPixelData.size(); ++i)
+        assignPixel(mPixelData[i], pixel);
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::fill(const Pixel16& pixel)
+{
+    for(std::size_t i = 0; i < mPixelData.size(); ++i)
+        assignPixel(mPixelData[i], pixel);
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::fill(const PixelF& pixel)
+{
+    for(std::size_t i = 0; i < mPixelData.size(); ++i)
+        assignPixel(mPixelData[i], pixel);
+}
+
 
 //----------------------------------------------------------------------------
 // Copying
@@ -1668,6 +1720,21 @@ void WPngImage::set(int x, int y, PixelF pixel)
         mData->setPixel(std::size_t(y * mWidth + x), pixel);
 }
 
+void WPngImage::fill(Pixel8 pixel)
+{
+    if(mData) mData->fill(pixel);
+}
+
+void WPngImage::fill(Pixel16 pixel)
+{
+    if(mData) mData->fill(pixel);
+}
+
+void WPngImage::fill(PixelF pixel)
+{
+    if(mData) mData->fill(pixel);
+}
+
 // These are called by the loading functions. They assume the index is valid.
 void WPngImage::setPixel(std::size_t index, const Pixel8& p)
 {
@@ -1683,6 +1750,24 @@ void WPngImage::setPixel(std::size_t index, const Pixel16& p)
 //============================================================================
 // Drawing functions
 //============================================================================
+void WPngImage::drawPixel(int x, int y, Pixel8 pixel)
+{
+    if(x >= 0 && x < mWidth && y >= 0 && y < mHeight && mData)
+        mData->drawPixel(std::size_t(y*width() + x), pixel);
+}
+
+void WPngImage::drawPixel(int x, int y, Pixel16 pixel)
+{
+    if(x >= 0 && x < mWidth && y >= 0 && y < mHeight && mData)
+        mData->drawPixel(std::size_t(y*width() + x), pixel);
+}
+
+void WPngImage::drawPixel(int x, int y, PixelF pixel)
+{
+    if(x >= 0 && x < mWidth && y >= 0 && y < mHeight && mData)
+        mData->drawPixel(std::size_t(y*width() + x), pixel);
+}
+
 void WPngImage::putImage(int destX, int destY, const WPngImage& src,
                          int srcX, int srcY, int srcWidth, int srcHeight, bool useBlending)
 {

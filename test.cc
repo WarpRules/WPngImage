@@ -1200,6 +1200,28 @@ static bool testDrawLine
             }
         }
 
+    // Test setting single pixel
+    image.fill(imagePixel);
+
+    if(useBlending)
+        image.drawPixel(lineX, lineY, linePixel);
+    else
+        image.set(lineX, lineY, linePixel);
+
+    for(int y = 0; y < imageHeight; ++y)
+        for(int x = 0; x < imageWidth; ++x)
+        {
+            const WPngImage::Pixel8 pixel = image.get8(x, y);
+            if(x == lineX && y == lineY)
+            {
+                COMPAREP(pixel, resultPixel);
+            }
+            else
+            {
+                COMPAREP(pixel, bgPixel);
+            }
+        }
+
     return true;
 }
 
