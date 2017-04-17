@@ -2347,6 +2347,58 @@ static bool testSavingAndLoading()
 
 
 //============================================================================
+// Test constexprness
+//============================================================================
+#if !WPNGIMAGE_RESTRICT_TO_CPP98
+namespace
+{
+    constexpr WPngImage::Pixel8 kP8_1, kP8_2(9), kP8_3(8, 2), kP8_4(1, 2, 3), kP8_5(1, 2, 3, 4),
+        kP8_6(0, 0, 0, 255);
+    constexpr WPngImage::Pixel16 kP16_1, kP16_2(900), kP16_3(800, 2000), kP16_4(1000, 2000, 3000),
+        kP16_5(1000, 2000, 3000, 4000), kP16_6(0, 0, 0, 65535);
+    constexpr WPngImage::PixelF kPF_1, kPF_2(0.1), kPF_3(0.2, 0.3), kPF_4(0.1, 0.2, 0.3),
+        kPF_5(0.1, 0.2, 0.3, 0.4), kPF_6(0, 0, 0, 1.0);
+}
+
+static_assert(kP8_1.r == 0 && kP8_1.g == 0 && kP8_1.b == 0 && kP8_1.a == 255, "Erroneous values");
+static_assert(kP8_2.r == 9 && kP8_2.g == 9 && kP8_2.b == 9 && kP8_2.a == 255, "Erroneous values");
+static_assert(kP8_3.r == 8 && kP8_3.g == 8 && kP8_3.b == 8 && kP8_3.a == 2, "Erroneous values");
+static_assert(kP8_4.r == 1 && kP8_4.g == 2 && kP8_4.b == 3 && kP8_4.a == 255, "Erroneous values");
+static_assert(kP8_5.r == 1 && kP8_5.g == 2 && kP8_5.b == 3 && kP8_5.a == 4, "Erroneous values");
+static_assert(kP8_6.r == 0 && kP8_6.g == 0 && kP8_6.b == 0 && kP8_6.a == 255, "Erroneous values");
+static_assert(kP8_1 == kP8_6 && kP8_2 != kP8_3 && kP8_4 != kP8_5, "Comparison failure");
+
+static_assert(kP16_1.r == 0 && kP16_1.g == 0 && kP16_1.b == 0 && kP16_1.a == 65535,
+              "Erroneous values");
+static_assert(kP16_2.r == 900 && kP16_2.g == 900 && kP16_2.b == 900 && kP16_2.a == 65535,
+              "Erroneous values");
+static_assert(kP16_3.r == 800 && kP16_3.g == 800 && kP16_3.b == 800 && kP16_3.a == 2000,
+              "Erroneous values");
+static_assert(kP16_4.r == 1000 && kP16_4.g == 2000 && kP16_4.b == 3000 && kP16_4.a == 65535,
+              "Erroneous values");
+static_assert(kP16_5.r == 1000 && kP16_5.g == 2000 && kP16_5.b == 3000 && kP16_5.a == 4000,
+              "Erroneous values");
+static_assert(kP16_6.r == 0 && kP16_6.g == 0 && kP16_6.b == 0 && kP16_6.a == 65535,
+              "Erroneous values");
+static_assert(kP16_1 == kP16_6 && kP16_2 != kP16_3 && kP16_4 != kP16_5, "Comparison failure");
+
+static_assert(kPF_1.r == 0.0f && kPF_1.g == 0.0f && kPF_1.b == 0.0f && kPF_1.a == 1.0f,
+              "Erroneous values");
+static_assert(kPF_2.r == 0.1f && kPF_2.g == 0.1f && kPF_2.b == 0.1f && kPF_2.a == 1.0f,
+              "Erroneous values");
+static_assert(kPF_3.r == 0.2f && kPF_3.g == 0.2f && kPF_3.b == 0.2f && kPF_3.a == 0.3f,
+              "Erroneous values");
+static_assert(kPF_4.r == 0.1f && kPF_4.g == 0.2f && kPF_4.b == 0.3f && kPF_4.a == 1.0f,
+              "Erroneous values");
+static_assert(kPF_5.r == 0.1f && kPF_5.g == 0.2f && kPF_5.b == 0.3f && kPF_5.a == 0.4f,
+              "Erroneous values");
+static_assert(kPF_6.r == 0.0f && kPF_6.g == 0.0f && kPF_6.b == 0.0f && kPF_6.a == 1.0f,
+              "Erroneous values");
+static_assert(kPF_1 == kPF_6 && kPF_2 != kPF_3 && kPF_4 != kPF_5, "Comparison failure");
+#endif
+
+
+//============================================================================
 // main()
 //============================================================================
 int main()

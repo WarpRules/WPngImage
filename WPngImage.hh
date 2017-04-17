@@ -21,15 +21,17 @@
 #if !WPNGIMAGE_RESTRICT_TO_CPP98
 #include <cstdint>
 #include <functional>
+#define WPNGIMAGE_CONSTEXPR constexpr
 #else
 #include <climits>
 #if CHAR_BIT != 8 || UCHAR_MAX != 255
 #error "WPngImage requires 8-bit bytes"
 #endif
+#define WPNGIMAGE_CONSTEXPR
 #endif
 
-#define WPNGIMAGE_VERSION 0x010202
-#define WPNGIMAGE_VERSION_STRING "1.2.2"
+#define WPNGIMAGE_VERSION 0x010203
+#define WPNGIMAGE_VERSION_STRING "1.2.3"
 #define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2016 Juha Nieminen"
 
 
@@ -348,11 +350,11 @@ struct WPngImage::Pixel
 
     CT r, g, b, a;
 
-    Pixel(CT red, CT green, CT blue, CT alpha):
+    WPNGIMAGE_CONSTEXPR Pixel(CT red, CT green, CT blue, CT alpha):
         r(red), g(green), b(blue), a(alpha) {}
 
-    bool operator==(const Pixel_t&) const;
-    bool operator!=(const Pixel_t&) const;
+    WPNGIMAGE_CONSTEXPR bool operator==(const Pixel_t&) const;
+    WPNGIMAGE_CONSTEXPR bool operator!=(const Pixel_t&) const;
 
     Pixel_t& operator+=(OperatorParam_t);
     Pixel_t operator+(OperatorParam_t) const;
@@ -429,7 +431,7 @@ struct WPngImage::Pixel
 template<typename Pixel_t, typename CT>
 struct WPngImage::IPixel: public WPngImage::Pixel<Pixel_t, CT, Int32>
 {
-    IPixel(CT red, CT green, CT blue, CT alpha):
+    WPNGIMAGE_CONSTEXPR IPixel(CT red, CT green, CT blue, CT alpha):
         Pixel<Pixel_t, CT, Int32>::Pixel(red, green, blue, alpha)
     {}
 
@@ -445,11 +447,20 @@ struct WPngImage::Pixel8: public WPngImage::IPixel<Pixel8, Byte>
 {
     static const Byte kComponentMaxValue = ~Byte(0);
 
-    Pixel8(): IPixel(0, 0, 0, kComponentMaxValue) {}
-    explicit Pixel8(Byte gray): IPixel(gray, gray, gray, kComponentMaxValue) {}
-    Pixel8(Byte gray, Byte alpha): IPixel(gray, gray, gray, alpha) {}
-    Pixel8(Byte red, Byte green, Byte blue): IPixel(red, green, blue, kComponentMaxValue) {}
-    Pixel8(Byte red, Byte green, Byte blue, Byte alpha): IPixel(red, green, blue, alpha) {}
+    WPNGIMAGE_CONSTEXPR Pixel8():
+        IPixel(0, 0, 0, kComponentMaxValue) {}
+
+    explicit WPNGIMAGE_CONSTEXPR Pixel8(Byte gray):
+        IPixel(gray, gray, gray, kComponentMaxValue) {}
+
+    WPNGIMAGE_CONSTEXPR Pixel8(Byte gray, Byte alpha):
+        IPixel(gray, gray, gray, alpha) {}
+
+    WPNGIMAGE_CONSTEXPR Pixel8(Byte red, Byte green, Byte blue):
+        IPixel(red, green, blue, kComponentMaxValue) {}
+
+    WPNGIMAGE_CONSTEXPR Pixel8(Byte red, Byte green, Byte blue, Byte alpha):
+        IPixel(red, green, blue, alpha) {}
 
     explicit Pixel8(Pixel16);
     explicit Pixel8(PixelF);
@@ -479,11 +490,20 @@ struct WPngImage::Pixel16: public WPngImage::IPixel<Pixel16, UInt16>
 {
     static const UInt16 kComponentMaxValue = ~UInt16(0);
 
-    Pixel16(): IPixel(0, 0, 0, kComponentMaxValue) {}
-    explicit Pixel16(UInt16 gray): IPixel(gray, gray, gray, kComponentMaxValue) {}
-    Pixel16(UInt16 gray, UInt16 alpha): IPixel(gray, gray, gray, alpha) {}
-    Pixel16(UInt16 red, UInt16 green, UInt16 blue): IPixel(red, green, blue, kComponentMaxValue) {}
-    Pixel16(UInt16 red, UInt16 green, UInt16 blue, UInt16 alpha): IPixel(red, green, blue, alpha) {}
+    WPNGIMAGE_CONSTEXPR Pixel16():
+        IPixel(0, 0, 0, kComponentMaxValue) {}
+
+    explicit WPNGIMAGE_CONSTEXPR Pixel16(UInt16 gray):
+        IPixel(gray, gray, gray, kComponentMaxValue) {}
+
+    WPNGIMAGE_CONSTEXPR Pixel16(UInt16 gray, UInt16 alpha):
+        IPixel(gray, gray, gray, alpha) {}
+
+    WPNGIMAGE_CONSTEXPR Pixel16(UInt16 red, UInt16 green, UInt16 blue):
+        IPixel(red, green, blue, kComponentMaxValue) {}
+
+    WPNGIMAGE_CONSTEXPR Pixel16(UInt16 red, UInt16 green, UInt16 blue, UInt16 alpha):
+        IPixel(red, green, blue, alpha) {}
 
     explicit Pixel16(Pixel8);
     explicit Pixel16(PixelF);
@@ -511,11 +531,20 @@ WPngImage::Pixel16 operator/(WPngImage::Int32, const WPngImage::Pixel16&);
 //============================================================================
 struct WPngImage::PixelF: public WPngImage::Pixel<PixelF, Float, Float>
 {
-    PixelF(): Pixel(0, 0, 0, 1.0f) {}
-    explicit PixelF(Float gray): Pixel(gray, gray, gray, 1.0f) {}
-    PixelF(Float gray, Float alpha): Pixel(gray, gray, gray, alpha) {}
-    PixelF(Float red, Float green, Float blue): Pixel(red, green, blue, 1.0f) {}
-    PixelF(Float red, Float green, Float blue, Float alpha): Pixel(red, green, blue, alpha) {}
+    WPNGIMAGE_CONSTEXPR PixelF():
+        Pixel(0, 0, 0, 1.0f) {}
+
+    explicit WPNGIMAGE_CONSTEXPR PixelF(Float gray):
+        Pixel(gray, gray, gray, 1.0f) {}
+
+    WPNGIMAGE_CONSTEXPR PixelF(Float gray, Float alpha):
+        Pixel(gray, gray, gray, alpha) {}
+
+    WPNGIMAGE_CONSTEXPR PixelF(Float red, Float green, Float blue):
+        Pixel(red, green, blue, 1.0f) {}
+
+    WPNGIMAGE_CONSTEXPR PixelF(Float red, Float green, Float blue, Float alpha):
+        Pixel(red, green, blue, alpha) {}
 
     explicit PixelF(Pixel8);
     explicit PixelF(Pixel16);
@@ -545,12 +574,14 @@ WPngImage::PixelF operator/(WPngImage::Float, const WPngImage::PixelF&);
 // Pixel base class inline function implementations
 //============================================================================
 template<typename Pixel_t, typename CT, typename OperatorParam_t>
+WPNGIMAGE_CONSTEXPR
 bool WPngImage::Pixel<Pixel_t, CT, OperatorParam_t>::operator==(const Pixel_t& rhs) const
 {
     return r == rhs.r && g == rhs.g && b == rhs.b && a == rhs.a;
 }
 
 template<typename Pixel_t, typename CT, typename OperatorParam_t>
+WPNGIMAGE_CONSTEXPR
 bool WPngImage::Pixel<Pixel_t, CT, OperatorParam_t>::operator!=(const Pixel_t& rhs) const
 {
     return r != rhs.r || g != rhs.g || b != rhs.b || a != rhs.a;
@@ -574,5 +605,9 @@ Pixel_t WPngImage::Pixel<Pixel_t, CT, OperatorParam_t>::averagedPixel
     const Pixel_t pixels[] = { first, rest... };
     return averagedPixel(pixels, 1 + sizeof...(Rest));
 }
+#endif
+
+#if !WPNGIMAGE_RESTRICT_TO_CPP98
+#undef WPNGIMAGE_CONSTEXPR
 #endif
 #endif

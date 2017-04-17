@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage 1.2.2 documentation</title>
+  <title>WPngImage 1.2.3 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -79,7 +79,7 @@ code
 </head>
 
 <body>
-<h1>WPngImage 1.2.2 documentation</h1>
+<h1>WPngImage 1.2.3 documentation</h1>
 
 <p><code>WPngImage</code> is a C++ library to manage images in PNG format. It can be used
   as a completely stand-alone library using the <a href="http://lodev.org/lodepng/">lodepng</a>
@@ -157,6 +157,7 @@ code
     <li><a href="#pixel_arithmetic">Arithmetic operators</a></li>
     <li><a href="#pixel_color_space_conversions">Color space conversions</a></li>
     <li><a href="#pixel_other">Other operations</a></li>
+    <li><a href="#pixel_constexpr">constexpr expressions</a></li>
   </ul>
 </ul>
 
@@ -1330,5 +1331,21 @@ Pixel_t grayCIEPixel() const;</pre>
 <p>These perform a colorimetric (luminance-preserving) conversion to grayscale, as defined
   by the CIE 1931 standard. This is a more complicated (and thus slightly heavier) conversion
   than the simpler weighted-average one, but is more accurate.</p>
+
+
+<!---------------------------------------------------------------------------->
+<h3 id="pixel_constexpr">constexpr expressions</h3>
+
+<p>When used in C++11 (or later), the pixel types can be used in <code>constexpr</code>
+  expressions, but this is limited to construction, comparison, and element access. In other
+  words, expressions like this are possible:</p>
+
+<pre>constexpr WPngImage::Pixel8 p1(1, 2, 3, 4), p2(5, 6, 7);
+
+static_assert(p1.r == 1 && p1.g == 2 && p1.b == 3 && p1.a == 4, "Error");
+static_assert(p1 != p2, "Error");</pre>
+
+<p>The other member functions of the pixel classes are not <code>constexpr</code> for
+  practical reasons, and thus not usable in <code>constexpr</code> expressions.</p>
 
 </body></html>
