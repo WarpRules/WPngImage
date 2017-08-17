@@ -970,6 +970,30 @@ WPngImage::PixelF WPngImage::PixelF::grayPixel(Float rWeight, Float gWeight, Flo
     return PixelF(gray, gray, gray, a);
 }
 
+WPngImage::PixelF WPngImage::PixelF::interpolatedPixel(const PixelF& p2, Float factor) const
+{
+    const Float invFactor = 1.0f - factor;
+
+    if(a == p2.a)
+        return PixelF(r * invFactor + p2.r * factor,
+                      g * invFactor + p2.g * factor,
+                      b * invFactor + p2.b * factor, a);
+
+    const Float factor1 = a * invFactor, factor2 = p2.a * factor;
+    const Float sumOfFactors = factor1 + factor2;
+    if(sumOfFactors == 0.0f) return PixelF();
+    const Float invSumOfFactors = 1.0f / sumOfFactors;
+    return PixelF((r * factor1 + p2.r * factor2) * invSumOfFactors,
+                  (g * factor1 + p2.g * factor2) * invSumOfFactors,
+                  (b * factor1 + p2.b * factor2) * invSumOfFactors,
+                  sumOfFactors);
+}
+
+void WPngImage::PixelF::interpolate(const PixelF& p, Float factor)
+{
+    *this = interpolatedPixel(p, factor);
+}
+
 WPngImage::PixelF operator-(WPngImage::Float value, const WPngImage::PixelF& p)
 {
     return WPngImage::PixelF(value - p.r, value - p.g, value - p.b, p.a);
@@ -1133,6 +1157,12 @@ struct WPngImage::PngDataBase
     virtual void fill(const Pixel8&) = 0;
     virtual void fill(const Pixel16&) = 0;
     virtual void fill(const PixelF&) = 0;
+    virtual void transform(TransformFunc8) = 0;
+    virtual void transform(TransformFunc16) = 0;
+    virtual void transform(TransformFuncF) = 0;
+    virtual void transform(TransformFunc8, WPngImage& dest) const = 0;
+    virtual void transform(TransformFunc16, WPngImage& dest) const = 0;
+    virtual void transform(TransformFuncF, WPngImage& dest) const = 0;
     virtual void copyPixelTo(std::size_t, PngDataBase*, std::size_t) const = 0;
     virtual void copyAllPixelsTo(PngDataBase*) const = 0;
     virtual void copyPixelLineTo
@@ -1175,6 +1205,12 @@ struct WPngImage::PngData: public PngDataBase
     virtual void fill(const Pixel8&);
     virtual void fill(const Pixel16&);
     virtual void fill(const PixelF&);
+    virtual void transform(TransformFunc8);
+    virtual void transform(TransformFunc16);
+    virtual void transform(TransformFuncF);
+    virtual void transform(TransformFunc8, WPngImage& dest) const;
+    virtual void transform(TransformFunc16, WPngImage& dest) const;
+    virtual void transform(TransformFuncF, WPngImage& dest) const;
     virtual void copyPixelTo(std::size_t, PngDataBase*, std::size_t) const;
     virtual void copyAllPixelsTo(PngDataBase*) const;
     virtual void copyPixelLineTo
@@ -1334,6 +1370,48 @@ void WPngImage::PngData<PixelData_t>::fill(const PixelF& pixel)
 {
     for(std::size_t i = 0; i < mPixelData.size(); ++i)
         assignPixel(mPixelData[i], pixel);
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::transform(TransformFunc8 func)
+{
+    for(std::size_t i = 0; i < mPixelData.size(); ++i)
+        assignPixel(mPixelData[i], func(convertToPixel<Pixel8>(mPixelData[i])));
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::transform(TransformFunc16 func)
+{
+    for(std::size_t i = 0; i < mPixelData.size(); ++i)
+        assignPixel(mPixelData[i], func(convertToPixel<Pixel16>(mPixelData[i])));
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::transform(TransformFuncF func)
+{
+    for(std::size_t i = 0; i < mPixelData.size(); ++i)
+        assignPixel(mPixelData[i], func(convertToPixel<PixelF>(mPixelData[i])));
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::transform(TransformFunc8 func, WPngImage& dest) const
+{
+    for(std::size_t i = 0; i < mPixelData.size(); ++i)
+        dest.mData->setPixel(i, func(convertToPixel<Pixel8>(mPixelData[i])));
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::transform(TransformFunc16 func, WPngImage& dest) const
+{
+    for(std::size_t i = 0; i < mPixelData.size(); ++i)
+        dest.mData->setPixel(i, func(convertToPixel<Pixel16>(mPixelData[i])));
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::transform(TransformFuncF func, WPngImage& dest) const
+{
+    for(std::size_t i = 0; i < mPixelData.size(); ++i)
+        dest.mData->setPixel(i, func(convertToPixel<PixelF>(mPixelData[i])));
 }
 
 
@@ -1733,6 +1811,54 @@ void WPngImage::fill(Pixel16 pixel)
 void WPngImage::fill(PixelF pixel)
 {
     if(mData) mData->fill(pixel);
+}
+
+void WPngImage::transform(TransformFunc8 func)
+{
+    if(mData) mData->transform(func);
+}
+
+void WPngImage::transform(TransformFunc16 func)
+{
+    if(mData) mData->transform(func);
+}
+
+void WPngImage::transform(TransformFuncF func)
+{
+    if(mData) mData->transform(func);
+}
+
+void WPngImage::transform(TransformFunc8 func, WPngImage& dest) const
+{
+    if(mData)
+    {
+        if(dest.width() != width() || dest.height() != height())
+            dest.newImage(width(), height(),
+                          dest.mData ? dest.currentPixelFormat() : currentPixelFormat());
+        mData->transform(func, dest);
+    }
+}
+
+void WPngImage::transform(TransformFunc16 func, WPngImage& dest) const
+{
+    if(mData)
+    {
+        if(dest.width() != width() || dest.height() != height())
+            dest.newImage(width(), height(),
+                          dest.mData ? dest.currentPixelFormat() : currentPixelFormat());
+        mData->transform(func, dest);
+    }
+}
+
+void WPngImage::transform(TransformFuncF func, WPngImage& dest) const
+{
+    if(mData)
+    {
+        if(dest.width() != width() || dest.height() != height())
+            dest.newImage(width(), height(),
+                          dest.mData ? dest.currentPixelFormat() : currentPixelFormat());
+        mData->transform(func, dest);
+    }
 }
 
 // These are called by the loading functions. They assume the index is valid.

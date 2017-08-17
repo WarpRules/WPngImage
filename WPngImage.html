@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage 1.2.3 documentation</title>
+  <title>WPngImage 1.3.0 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -79,7 +79,7 @@ code
 </head>
 
 <body>
-<h1>WPngImage 1.2.3 documentation</h1>
+<h1>WPngImage 1.3.0 documentation</h1>
 
 <p><code>WPngImage</code> is a C++ library to manage images in PNG format. It can be used
   as a completely stand-alone library using the <a href="http://lodev.org/lodepng/">lodepng</a>
@@ -143,6 +143,7 @@ code
     <li><a href="#wpngimage_iostatus">IOStatus</a></li>
     <li><a href="#wpngimage_properties">Image properties</a></li>
     <li><a href="#wpngimage_pixels">Getting and setting pixels</a></li>
+    <li><a href="#wpngimage_transform">Changing all the pixels</a></li>
     <li><a href="#wpngimage_drawing_images">Drawing images</a></li>
     <li><a href="#wpngimage_drawing_pixels">Drawing pixels</a></li>
     <li><a href="#wpngimage_drawing_lines">Drawing lines</a></li>
@@ -166,7 +167,7 @@ code
 
 <p>The source code of this software is published under the MIT license.</p>
 
-<p>Copyright (c) 2016 Juha Nieminen
+<p>Copyright (c) 2017 Juha Nieminen
 
 <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
 
@@ -295,6 +296,15 @@ image.set(x, y, pixel);</pre>
 
 <p>If the default error handling does not suffice, more options are available. Consult the
   section <a href="#wpngimage_iostatus">IOStatus</a> for details.</p>
+
+<p>In many cases, where the same operation is done to all the pixels in the image,
+  <code>WPngImage</code> offers a shortcut function which applies a unary function to all
+  the pixels of the image. The two for-loops above can be replaced with this one-liner:</p>
+
+<pre>image.transform16([](auto pixel) { return 65535 - pixel; });</pre>
+
+<p>Consult the section <a href="#wpngimage_transform">Changing all the pixels</a> for more
+  details.</p>
 
 <!---------------------------------------------------------------------------->
 <h3 id="tutorial_drawing">Drawing images, lines and rectangles</h3>
@@ -934,6 +944,57 @@ void fill(PixelF);</pre>
 
 <p>The <code>fill()</code> functions can be used to set the entire image to the specified
   pixel color.</p>
+
+<!---------------------------------------------------------------------------->
+<h3 id="wpngimage_transform">Changing all the pixels</h3>
+
+<pre>using TransformFunc8 = std::function&lt;Pixel8(Pixel8)&gt;;
+using TransformFunc16 = std::function&lt;Pixel16(Pixel16)&gt;;
+using TransformFuncF = std::function&lt;PixelF(PixelF)&gt;;
+
+void transform(TransformFunc8);
+void transform(TransformFunc16);
+void transform(TransformFuncF);
+void transform(TransformFunc8, WPngImage&amp; dest) const;
+void transform(TransformFunc16, WPngImage&amp; dest) const;
+void transform(TransformFuncF, WPngImage&amp; dest) const;
+
+void transform8(TransformFunc8);
+void transform16(TransformFunc16);
+void transformF(TransformFuncF);
+void transform8(TransformFunc8, WPngImage&amp; dest);
+void transform16(TransformFunc16, WPngImage&amp; dest);
+void transformF(TransformFuncF, WPngImage&amp; dest);</pre>
+
+<p>These functions can be used to change all the pixels of the image using an unary functor.
+  For each pixel in the image, the functor is given it as parameter, and its return value is
+  assigned to that pixel. This is completely equivalent to traversing the image with two
+  for-loops and performing this assignment explicitly, but this function can be more convenient
+  in many cases.</p>
+
+<p>Example: Inverting an image:</p>
+
+<pre>image.transform([](WPngImage::Pixel16 pixel) { return 65535 - pixel; });</pre>
+
+<p>The suffixed versions of the <code>transform()</code> function exist to make it possible
+  to use generic lambdas. The previous example can thus be more briefly written as:</p>
+
+<pre>image.transform16([](auto pixel) { return 65535 - pixel; });</pre>
+
+<p>The versions taking two parameters can be used to write the result to another
+  <code>WPngImage</code> instance rather than this one. If that other image is not already
+  of the same size as this one, it will be re-created using that size (by calling the
+  <code>newImage()</code> function). If the destination image did not have any image data
+  at all, it will be made to use the same pixel format as this one, otherwise its pixel
+  format will be preserved.</p>
+
+<p>If the library is compiled in C++98 compatibility mode, the functions can only take
+  a function pointer as parameter. The function types will be:</p>
+
+<pre>typedef Pixel8(*TransformFunc8)(Pixel8);
+typedef Pixel16(*TransformFunc16)(Pixel16);
+typedef PixelF(*TransformFuncF)(PixelF);</pre>
+
 
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_drawing_images">Drawing images</h3>

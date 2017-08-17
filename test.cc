@@ -2347,6 +2347,111 @@ static bool testSavingAndLoading()
 
 
 //============================================================================
+// Test the transform functions
+//============================================================================
+#if WPNGIMAGE_RESTRICT_TO_CPP98
+WPngImage::Pixel8 invertFunc8(WPngImage::Pixel8 pixel) { return 255 - pixel; }
+WPngImage::Pixel16 invertFunc16(WPngImage::Pixel16 pixel) { return 65535 - pixel; }
+WPngImage::PixelF invertFuncF(WPngImage::PixelF pixel) { return 1.0f - pixel; }
+
+WPngImage::TransformFunc8 getInvertFunc8() { return &invertFunc8; }
+WPngImage::TransformFunc16 getInvertFunc16() { return &invertFunc16; }
+WPngImage::TransformFuncF getInvertFuncF() { return &invertFuncF; }
+#else
+WPngImage::TransformFunc8 getInvertFunc8()
+{ return [](WPngImage::Pixel8 pixel) { return 255 - pixel; }; }
+
+WPngImage::TransformFunc16 getInvertFunc16()
+{ return [](WPngImage::Pixel16 pixel) { return 65535 - pixel; }; }
+
+WPngImage::TransformFuncF getInvertFuncF()
+{ return [](WPngImage::PixelF pixel) { return 1.0f - pixel; }; }
+#endif
+
+template<typename Pixel_t>
+static bool testTransformedImageContents(const WPngImage& destImage, const WPngImage& srcImage,
+                                         typename Pixel_t::Component_t componentMaxValue)
+{
+    if(destImage.width() != srcImage.width() || destImage.height() != srcImage.height())
+    {
+        std::cout << "destImage is " << destImage.width() << "x" << destImage.height()
+                  << ", but srcImage is " << srcImage.width() << "x" << srcImage.height()
+                  << ".\n"; ERRORRET;
+    }
+
+    Pixel_t srcPixel, destPixel;
+
+    for(int y = 0; y < destImage.height(); ++y)
+    {
+        for(int x = 0; x < destImage.width(); ++x)
+        {
+            getPixel(srcImage, x, y, srcPixel);
+            getPixel(destImage, x, y, destPixel);
+            const Pixel_t cmpPixel = componentMaxValue - srcPixel;
+            COMPAREP(destPixel, cmpPixel);
+        }
+    }
+
+    return true;
+}
+
+template<typename Pixel_t, typename TransformFunc_t>
+static bool testTransformWithImage(const WPngImage& srcImage,
+                                   typename Pixel_t::Component_t componentMaxValue,
+                                   TransformFunc_t transformFunc)
+{
+    WPngImage destImage1, destImage2;
+
+    srcImage.transform(transformFunc, destImage1);
+    if(!testTransformedImageContents<Pixel_t>(destImage1, srcImage, componentMaxValue)) ERRORRET;
+
+    destImage2 = srcImage;
+    destImage2.transform(transformFunc);
+    if(!testTransformedImageContents<Pixel_t>(destImage2, srcImage, componentMaxValue)) ERRORRET;
+
+    return true;
+}
+
+template<typename Pixel_t, typename TransformFunc_t>
+static bool testTransform(typename Pixel_t::Component_t componentMaxValue,
+                          TransformFunc_t transformFunc)
+{
+    const int dimensions[] = { 1, 2, 6, 8, 50, 256 };
+    const int kDimensionsAmount = sizeof(dimensions) / sizeof(*dimensions);
+
+    for(int yDimInd = 0; yDimInd < kDimensionsAmount; ++yDimInd)
+    {
+        const int height = dimensions[yDimInd];
+        for(int xDimInd = 0; xDimInd < kDimensionsAmount; ++xDimInd)
+        {
+            const int width = dimensions[xDimInd];
+            WPngImage image(width, height, Pixel_t());
+
+            for(int y = 0; y < height; ++y)
+                for(int x = 0; x < width; ++x)
+                    image.set(x, y, Pixel_t(x * componentMaxValue / width,
+                                            y * componentMaxValue / height, 0));
+
+            if(!testTransformWithImage<Pixel_t>(image, componentMaxValue, transformFunc)) ERRORRET;
+        }
+    }
+
+    return true;
+}
+
+static bool testTransform()
+{
+    if(!testTransform<WPngImage::Pixel8>(255, getInvertFunc8())) ERRORRET;
+    if(!testTransform<WPngImage::Pixel8>(255, getInvertFunc16())) ERRORRET;
+    if(!testTransform<WPngImage::Pixel8>(255, getInvertFuncF())) ERRORRET;
+    if(!testTransform<WPngImage::Pixel16>(65535, getInvertFunc16())) ERRORRET;
+    if(!testTransform<WPngImage::Pixel16>(65535, getInvertFuncF())) ERRORRET;
+    if(!testTransform<WPngImage::PixelF>(1.0f, getInvertFuncF())) ERRORRET;
+    return true;
+}
+
+
+//============================================================================
 // Test constexprness
 //============================================================================
 #if !WPNGIMAGE_RESTRICT_TO_CPP98
@@ -2428,6 +2533,7 @@ int main()
     if(!testImages2()) ERRORRET1;
     if(!testImages3()) ERRORRET1;
     if(!testSavingAndLoading()) ERRORRET1;
+    if(!testTransform()) ERRORRET1;
 
     std::remove(kTestPngImageFileName);
     std::cout << "Ok.\n";

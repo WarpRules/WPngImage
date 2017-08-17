@@ -30,9 +30,9 @@
 #define WPNGIMAGE_CONSTEXPR
 #endif
 
-#define WPNGIMAGE_VERSION 0x010203
-#define WPNGIMAGE_VERSION_STRING "1.2.3"
-#define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2016 Juha Nieminen"
+#define WPNGIMAGE_VERSION 0x010300
+#define WPNGIMAGE_VERSION_STRING "1.3.0"
+#define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2017 Juha Nieminen"
 
 
 //============================================================================
@@ -245,6 +245,29 @@ class WPngImage
     void fill(Pixel8);
     void fill(Pixel16);
     void fill(PixelF);
+
+#if WPNGIMAGE_RESTRICT_TO_CPP98
+    typedef Pixel8(*TransformFunc8)(Pixel8);
+    typedef Pixel16(*TransformFunc16)(Pixel16);
+    typedef PixelF(*TransformFuncF)(PixelF);
+#else
+    using TransformFunc8 = std::function<Pixel8(Pixel8)>;
+    using TransformFunc16 = std::function<Pixel16(Pixel16)>;
+    using TransformFuncF = std::function<PixelF(PixelF)>;
+#endif
+    void transform(TransformFunc8);
+    void transform(TransformFunc16);
+    void transform(TransformFuncF);
+    void transform(TransformFunc8, WPngImage& dest) const;
+    void transform(TransformFunc16, WPngImage& dest) const;
+    void transform(TransformFuncF, WPngImage& dest) const;
+
+    void transform8(TransformFunc8 f) { transform(f); }
+    void transform16(TransformFunc16 f) { transform(f); }
+    void transformF(TransformFuncF f) { transform(f); }
+    void transform8(TransformFunc8 f, WPngImage& dest) const { transform(f, dest); }
+    void transform16(TransformFunc16 f, WPngImage& dest) const { transform(f, dest); }
+    void transformF(TransformFuncF f, WPngImage& dest) const { transform(f, dest); }
 
 
     //------------------------------------------------------------------------
@@ -557,6 +580,8 @@ struct WPngImage::PixelF: public WPngImage::Pixel<PixelF, Float, Float>
 
     Float toGray(Float rWeight = 0.299f, Float gWeight = 0.587f, Float bWeight = 0.114f) const;
     PixelF grayPixel(Float rWeight = 0.299f, Float gWeight = 0.587f, Float bWeight = 0.114f) const;
+    void interpolate(const PixelF&, Float factor);
+    PixelF interpolatedPixel(const PixelF&, Float factor) const;
 };
 
 inline WPngImage::PixelF operator+(WPngImage::Float value, const WPngImage::PixelF& p)
