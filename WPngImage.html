@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage 1.3.0 documentation</title>
+  <title>WPngImage 1.3.1 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -79,7 +79,7 @@ code
 </head>
 
 <body>
-<h1>WPngImage 1.3.0 documentation</h1>
+<h1>WPngImage 1.3.1 documentation</h1>
 
 <p><code>WPngImage</code> is a C++ library to manage images in PNG format. It can be used
   as a completely stand-alone library using the <a href="http://lodev.org/lodepng/">lodepng</a>
@@ -1368,6 +1368,27 @@ Pixel_t averagedPixel(const Pixel_t&amp;, Rest&amp;&amp;...) const;</pre>
 
 <pre>WPngImage::PixelF average1 = pixel1.averagedPixel(pixel2);
 WPngImage::PixelF average2 = pixel1.averagedPixel(pixel2, pixel3, pixel4);</pre>
+
+<h4>Interpolating between pixels</h4>
+
+<pre>void interpolate(const Pixel_t&amp;, CT factor);
+Pixel_t interpolatedPixel(const Pixel_t&amp;, CT factor) const;</pre>
+
+<p>Calculates proper (alpha-aware) interpolation between this pixel and the one given
+  as parameter.</p>
+
+<p>The factor parameter determines the interpolation position between the two pixels. A factor
+  of 0 yields fully the color of this pixel, a factor of the maximum component value yielding
+  fully the parameter pixel color. Factor values in between these two yield linearly interpolated
+  colors between the two.</p>
+
+<p>For <code>Pixel8</code> the factor ranges from 0 to 255, for <code>Pixel16</code> it
+  ranges from 0 to 65535, and for <code>PixelF</code> it ranges from 0.0 to 1.0.</p>
+
+<p>Note that in the last case the factor can go outside that range. It will not be clipped.
+  The weighting of the two colors will be continued linearly also outside the range (meaning
+  that one color will be more and more emphasized and the other having more and more of a
+  negative effect.)</p>
 
 <h4>Converting to grayscale (simple)</h4>
 

@@ -909,6 +909,29 @@ WPngImage::Pixel8::Pixel8(PixelF pF):
            floatToCT<Byte>(pF.a))
 {}
 
+WPngImage::Pixel8 WPngImage::Pixel8::interpolatedPixel(const Pixel8& p2, Byte factor) const
+{
+    const UInt32 invFactor = 255 - factor;
+
+    if(a == p2.a)
+        return Pixel8((r * invFactor + p2.r * factor) / 255,
+                      (g * invFactor + p2.g * factor) / 255,
+                      (b * invFactor + p2.b * factor) / 255, a);
+
+    const UInt32 factor1 = a * invFactor, factor2 = p2.a * factor;
+    const UInt32 sumOfFactors = factor1 + factor2;
+    if(sumOfFactors == 0) return Pixel8(0, 0, 0, 0);
+    return Pixel8((r * factor1 + p2.r * factor2) / sumOfFactors,
+                  (g * factor1 + p2.g * factor2) / sumOfFactors,
+                  (b * factor1 + p2.b * factor2) / sumOfFactors,
+                  sumOfFactors / 255);
+}
+
+void WPngImage::Pixel8::interpolate(const Pixel8& p2, Byte factor)
+{
+    *this = interpolatedPixel(p2, factor);
+}
+
 WPngImage::Pixel8 operator-(WPngImage::Int32 value, const WPngImage::Pixel8& p)
 {
     return WPngImage::Pixel8
@@ -933,6 +956,38 @@ WPngImage::Pixel16::Pixel16(PixelF pF):
     IPixel(floatToCT<UInt16>(pF.r), floatToCT<UInt16>(pF.g), floatToCT<UInt16>(pF.b),
            floatToCT<UInt16>(pF.a))
 {}
+
+WPngImage::Pixel16 WPngImage::Pixel16::interpolatedPixel(const Pixel16& p2, UInt16 factor) const
+{
+#if WPNGIMAGE_RESTRICT_TO_CPP98
+    if(sizeof(StdSize_t) < 8)
+        return Pixel16(PixelF(*this).interpolatedPixel(PixelF(p2), Float(factor / 65535.0f)));
+
+    typedef StdSize_t UInt64;
+#else
+    using UInt64 = std::uint_fast64_t;
+#endif
+
+    const UInt64 invFactor = 65535 - factor;
+
+    if(a == p2.a)
+        return Pixel16((r * invFactor + p2.r * factor) / 65535,
+                       (g * invFactor + p2.g * factor) / 65535,
+                       (b * invFactor + p2.b * factor) / 65535, a);
+
+    const UInt64 factor1 = a * invFactor, factor2 = p2.a * factor;
+    const UInt64 sumOfFactors = factor1 + factor2;
+    if(sumOfFactors == 0) return Pixel16(0, 0, 0, 0);
+    return Pixel16((r * factor1 + p2.r * factor2) / sumOfFactors,
+                   (g * factor1 + p2.g * factor2) / sumOfFactors,
+                   (b * factor1 + p2.b * factor2) / sumOfFactors,
+                   sumOfFactors / 65535);
+}
+
+void WPngImage::Pixel16::interpolate(const Pixel16& p2, UInt16 factor)
+{
+    *this = interpolatedPixel(p2, factor);
+}
 
 WPngImage::Pixel16 operator-(WPngImage::Int32 value, const WPngImage::Pixel16& p)
 {
@@ -981,7 +1036,7 @@ WPngImage::PixelF WPngImage::PixelF::interpolatedPixel(const PixelF& p2, Float f
 
     const Float factor1 = a * invFactor, factor2 = p2.a * factor;
     const Float sumOfFactors = factor1 + factor2;
-    if(sumOfFactors == 0.0f) return PixelF();
+    if(sumOfFactors == 0.0f) return PixelF(0, 0, 0, 0);
     const Float invSumOfFactors = 1.0f / sumOfFactors;
     return PixelF((r * factor1 + p2.r * factor2) * invSumOfFactors,
                   (g * factor1 + p2.g * factor2) * invSumOfFactors,

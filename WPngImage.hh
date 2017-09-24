@@ -30,8 +30,8 @@
 #define WPNGIMAGE_CONSTEXPR
 #endif
 
-#define WPNGIMAGE_VERSION 0x010300
-#define WPNGIMAGE_VERSION_STRING "1.3.0"
+#define WPNGIMAGE_VERSION 0x010301
+#define WPNGIMAGE_VERSION_STRING "1.3.1"
 #define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2017 Juha Nieminen"
 
 
@@ -493,6 +493,9 @@ struct WPngImage::Pixel8: public WPngImage::IPixel<Pixel8, Byte>
     explicit Pixel8(const YXY& yxy): IPixel(0, 0, 0, 0) { set(yxy); }
     explicit Pixel8(const CMY& cmy): IPixel(0, 0, 0, 0) { set(cmy); }
     explicit Pixel8(const CMYK& cmyk): IPixel(0, 0, 0, 0) { set(cmyk); }
+
+    void interpolate(const Pixel8&, Byte factor);
+    Pixel8 interpolatedPixel(const Pixel8&, Byte factor) const;
 };
 
 inline WPngImage::Pixel8 operator+(WPngImage::Int32 value, const WPngImage::Pixel8& p)
@@ -536,6 +539,9 @@ struct WPngImage::Pixel16: public WPngImage::IPixel<Pixel16, UInt16>
     explicit Pixel16(const YXY& yxy): IPixel(0, 0, 0, 0) { set(yxy); }
     explicit Pixel16(const CMY& cmy): IPixel(0, 0, 0, 0) { set(cmy); }
     explicit Pixel16(const CMYK& cmyk): IPixel(0, 0, 0, 0) { set(cmyk); }
+
+    void interpolate(const Pixel16&, UInt16 factor);
+    Pixel16 interpolatedPixel(const Pixel16&, UInt16 factor) const;
 };
 
 inline WPngImage::Pixel16 operator+(WPngImage::Int32 value, const WPngImage::Pixel16& p)

@@ -22,6 +22,8 @@ typedef WPngImage::Float Float;
 
 static const char* const kTestPngImageFileName = "WPngImage_testing.png";
 
+#define ARRAY_SIZE(array) (sizeof(array)/sizeof(array[0]))
+
 //============================================================================
 // Pixel and color ostream output operators
 //============================================================================
@@ -332,6 +334,177 @@ static bool testBlending(Pixel_t dest1, Pixel_t dest2, Pixel_t src, Pixel_t res1
     return true;
 }
 
+//============================================================================
+// Test pixel interpolation
+//============================================================================
+template<typename Pixel_t>
+struct InterpolationTestData
+{
+    Pixel_t p1, p2, result;
+    typename Pixel_t::Component_t factor;
+};
+
+template<typename Pixel_t>
+static bool testInterpolation(Pixel_t p1, Pixel_t p2, Pixel_t result,
+                              typename Pixel_t::Component_t factor)
+{
+#define COMPARE_INTERP(comp1, comp2) \
+    do { if(!compare(__LINE__, comp1, comp2)) { \
+        std::cout << " -> p1=" << p1 << ", p2=" << p2 << ", factor=" << eType(factor) << "\n"; \
+        return false; } } while(0)
+
+    Pixel_t testP1 = p1;
+    const Pixel_t testP2 = p1.interpolatedPixel(p2, factor);
+    testP1.interpolate(p2, factor);
+    COMPARE_INTERP(testP1, result);
+    COMPARE_INTERP(testP2, result);
+    return true;
+
+#undef COMPARE_INTERP
+}
+
+template<typename Pixel_t, std::size_t kAmount>
+static bool testInterpolation(const InterpolationTestData<Pixel_t>(&testData)[kAmount],
+                              typename Pixel_t::Component_t maxComponentValue)
+{
+    for(std::size_t i = 0; i < kAmount; ++i)
+    {
+        if(!testInterpolation(testData[i].p1, testData[i].p2, testData[i].result,
+                              testData[i].factor)) ERRORRET;
+
+        // If the alphas are the same, we can do the same test with a range of alphas:
+        if(testData[i].p1.a == testData[i].p2.a)
+        {
+            const typename Pixel_t::Component_t step = maxComponentValue / 10;
+            for(typename Pixel_t::Component_t alpha = 0; alpha < maxComponentValue; alpha += step)
+            {
+                Pixel_t p1 = testData[i].p1, p2 = testData[i].p2, res = testData[i].result;
+                p1.a = alpha; p2.a = alpha; res.a = alpha;
+                if(!testInterpolation(p1, p2, res, testData[i].factor)) ERRORRET;
+            }
+        }
+    }
+    return true;
+}
+
+template<typename Pixel_t, std::size_t kFactorsAmount>
+static bool testTrivialInterpolation
+(const typename Pixel_t::Component_t(&factors)[kFactorsAmount],
+ Pixel_t additionalTestPixel)
+{
+    for(unsigned factorInd = 0; factorInd < kFactorsAmount; ++factorInd)
+    {
+        for(unsigned alphaInd = 0; alphaInd < kFactorsAmount; ++alphaInd)
+        {
+            const typename Pixel_t::Component_t alpha = factors[alphaInd];
+            for(unsigned compInd = 0; compInd < kFactorsAmount; ++compInd)
+            {
+                const typename Pixel_t::Component_t comp = factors[alphaInd];
+                if(!testInterpolation
+                   (Pixel_t(comp, comp, comp, alpha), Pixel_t(comp, comp, comp, alpha),
+                    Pixel_t(comp, comp, comp, alpha), factors[factorInd])) ERRORRET;
+            }
+            additionalTestPixel.a = alpha;
+            if(!testInterpolation
+               (additionalTestPixel, additionalTestPixel, additionalTestPixel,
+                factors[factorInd])) ERRORRET;
+        }
+    }
+    return true;
+}
+
+static bool testInterpolation()
+{
+    typedef WPngImage::Pixel8 P8;
+    typedef WPngImage::Pixel16 P16;
+    typedef WPngImage::PixelF PF;
+
+    const P8::Component_t factors8[] = { 0, 1, 10, 64, 100, 127, 128, 200, 254, 255 };
+    const P16::Component_t factors16[] = { 0, 1, 100, 5000, 32767, 32768, 50000, 65534, 65535 };
+    const PF::Component_t factorsF[] = { 0.0, 0.1, 0.25, 0.49, 0.5, 0.76, 0.99, 1.0 };
+
+    if(!testTrivialInterpolation(factors8, P8(255, 128, 64))) ERRORRET;
+    if(!testTrivialInterpolation(factors16, P16(65535, 32768, 16384))) ERRORRET;
+    if(!testTrivialInterpolation(factorsF, PF(1.0, 0.5, 0.25))) ERRORRET;
+
+    const InterpolationTestData<P8> kTestData8[] =
+    {
+        { P8(255, 128, 64, 255), P8(0, 0, 0, 255), P8(255, 128, 64, 255), 0 },
+        { P8(255, 128, 64, 255), P8(0, 0, 0, 255), P8(127, 63, 31, 255), 128 },
+        { P8(255, 128, 64, 255), P8(0, 0, 0, 255), P8(0, 0, 0, 255), 255 },
+        { P8(255, 128, 64, 255), P8(0, 0, 0, 255), P8(63, 31, 15, 255), 192 },
+        { P8(255, 128, 64, 255), P8(0, 0, 0, 255), P8(191, 95, 47, 255), 64 },
+
+        { P8(255, 128, 64, 255), P8(10, 20, 30, 0), P8(255, 128, 64, 255), 0 },
+        { P8(255, 128, 64, 255), P8(40, 50, 60, 0), P8(255, 128, 64, 127), 128 },
+        { P8(255, 128, 64, 255), P8(70, 80, 90, 0), P8(0, 0, 0, 0), 255 },
+
+        { P8(255, 128, 64, 255), P8(0, 0, 0, 128), P8(255, 128, 64, 255), 0 },
+        { P8(255, 128, 64, 255), P8(0, 0, 0, 128), P8(169, 84, 42, 191), 128 },
+        { P8(255, 128, 64, 255), P8(0, 0, 0, 128), P8(0, 0, 0, 128), 255 },
+        { P8(255, 128, 64, 255), P8(0, 0, 0, 128), P8(100, 50, 25, 159), 192 },
+        { P8(255, 128, 64, 255), P8(0, 0, 0, 128), P8(218, 109, 54, 223), 64 },
+
+        { P8(192, 228, 48, 200), P8(60, 120, 160, 150), P8(167, 207, 69, 188), 60 }
+    };
+
+    const InterpolationTestData<P16> kTestData16[] =
+    {
+        { P16(65535, 32768, 16384, 65535), P16(0, 0, 0, 65535),
+          P16(65535, 32768, 16384, 65535), 0 },
+        { P16(65535, 32768, 16384, 65535), P16(0, 0, 0, 65535),
+          P16(32767, 16383, 8191, 65535), 32768 },
+        { P16(65535, 32768, 16384, 65535), P16(0, 0, 0, 65535),
+          P16(0, 0, 0, 65535), 65535 },
+        { P16(65535, 32768, 16384, 65535), P16(0, 0, 0, 65535),
+          P16(16383, 8191, 4095, 65535), 49152 },
+        { P16(65535, 32768, 16384, 65535), P16(0, 0, 0, 65535),
+          P16(49151, 24575, 12287, 65535), 16384 },
+
+        { P16(65535, 32768, 16384, 65535), P16(1000, 2000, 3000, 0),
+          P16(65535, 32768, 16384, 65535), 0 },
+        { P16(65535, 32768, 16384, 65535), P16(4000, 5000, 6000, 0),
+          P16(65535, 32768, 16384, 32767), 32768 },
+        { P16(65535, 32768, 16384, 65535), P16(7000, 8000, 9000, 0),
+          P16(0, 0, 0, 0), 65535 },
+
+        { P16(65535, 32768, 16384, 65535), P16(0, 0, 0, 32768),
+          P16(65535, 32768, 16384, 65535), 0 },
+        { P16(65535, 32768, 16384, 65535), P16(0, 0, 0, 32768),
+          P16(43689, 21844, 10922, 49151), 32768 },
+        { P16(65535, 32768, 16384, 65535), P16(0, 0, 0, 32768),
+          P16(0, 0, 0, 32768), 65535 },
+        { P16(65535, 32768, 16384, 65535), P16(0, 0, 0, 32768),
+          P16(26212, 13106, 6553, 40959), 49152 },
+        { P16(65535, 32768, 16384, 65535), P16(0, 0, 0, 32768),
+          P16(56172, 28086, 14043, 57343), 16384 },
+    };
+
+    const InterpolationTestData<PF> kTestDataF[] =
+    {
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0, 0, 0, 1.0), PF(1.0, 0.5, 0.25, 1.0), 0.0 },
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0, 0, 0, 1.0), PF(0.5, 0.25, 0.125, 1.0), 0.5 },
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0, 0, 0, 1.0), PF(0, 0, 0, 1.0), 1.0 },
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0, 0, 0, 1.0), PF(0.75, 0.375, 0.1875, 1.0), 0.25 },
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0, 0, 0, 1.0), PF(0.25, 0.125, 0.0625, 1.0), 0.75 },
+
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0.1, 0.2, 0.3, 0.0), PF(1.0, 0.5, 0.25, 1.0), 0.0 },
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0.1, 0.2, 0.3, 0.0), PF(1.0, 0.5, 0.25, 0.5), 0.5 },
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0.1, 0.2, 0.3, 0.0), PF(0, 0, 0, 0), 1.0 },
+
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0, 0, 0, 0.5), PF(1.0, 0.5, 0.25, 1.0), 0.0 },
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0, 0, 0, 0.25), PF(0.8, 0.4, 0.2, 0.625), 0.5 },
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0, 0, 0, 0.25), PF(0, 0, 0, 0.25), 1.0 },
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0, 0, 0, 0.5), PF(0.4, 0.2, 0.1, 0.625), 0.75 },
+        { PF(1.0, 0.5, 0.25, 1.0), PF(0, 0, 0, 0.75), PF(0.8, 0.4, 0.2, 0.9375), 0.25 },
+    };
+
+    if(!testInterpolation(kTestData8, 255)) ERRORRET;
+    if(!testInterpolation(kTestData16, 65535)) ERRORRET;
+    if(!testInterpolation(kTestDataF, 1.0)) ERRORRET;
+
+    return true;
+}
 
 //============================================================================
 // Test pixel averaging
@@ -589,6 +762,12 @@ static bool testPixelOperators2()
                      WPngImage::PixelF(1, 1, 1, 0.5),
                      WPngImage::PixelF(0.5, 0.5, 0.5, 1),
                      WPngImage::PixelF(2.0/3.0, 2.0/3.0, 2.0/3.0, 0.75))) ERRORRET;
+
+
+    //------------------------------------------------------------------------
+    // Pixel interpolation
+    //------------------------------------------------------------------------
+    if(!testInterpolation()) ERRORRET;
 
 
     //------------------------------------------------------------------------
