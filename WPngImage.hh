@@ -496,6 +496,8 @@ struct WPngImage::Pixel8: public WPngImage::IPixel<Pixel8, Byte>
 
     void interpolate(const Pixel8&, Byte factor);
     Pixel8 interpolatedPixel(const Pixel8&, Byte factor) const;
+    void rawInterpolate(const Pixel8&, Byte factor);
+    Pixel8 rawInterpolatedPixel(const Pixel8&, Byte factor) const;
 };
 
 inline WPngImage::Pixel8 operator+(WPngImage::Int32 value, const WPngImage::Pixel8& p)
@@ -542,6 +544,8 @@ struct WPngImage::Pixel16: public WPngImage::IPixel<Pixel16, UInt16>
 
     void interpolate(const Pixel16&, UInt16 factor);
     Pixel16 interpolatedPixel(const Pixel16&, UInt16 factor) const;
+    void rawInterpolate(const Pixel16&, UInt16 factor);
+    Pixel16 rawInterpolatedPixel(const Pixel16&, UInt16 factor) const;
 };
 
 inline WPngImage::Pixel16 operator+(WPngImage::Int32 value, const WPngImage::Pixel16& p)
@@ -588,6 +592,8 @@ struct WPngImage::PixelF: public WPngImage::Pixel<PixelF, Float, Float>
     PixelF grayPixel(Float rWeight = 0.299f, Float gWeight = 0.587f, Float bWeight = 0.114f) const;
     void interpolate(const PixelF&, Float factor);
     PixelF interpolatedPixel(const PixelF&, Float factor) const;
+    void rawInterpolate(const PixelF&, Float factor);
+    PixelF rawInterpolatedPixel(const PixelF&, Float factor) const;
 };
 
 inline WPngImage::PixelF operator+(WPngImage::Float value, const WPngImage::PixelF& p)

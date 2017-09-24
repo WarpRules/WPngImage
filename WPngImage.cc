@@ -932,6 +932,20 @@ void WPngImage::Pixel8::interpolate(const Pixel8& p2, Byte factor)
     *this = interpolatedPixel(p2, factor);
 }
 
+WPngImage::Pixel8 WPngImage::Pixel8::rawInterpolatedPixel(const Pixel8& p2, Byte factor) const
+{
+    const UInt32 invFactor = 255 - factor;
+    return Pixel8((r * invFactor + p2.r * factor) / 255,
+                  (g * invFactor + p2.g * factor) / 255,
+                  (b * invFactor + p2.b * factor) / 255,
+                  (a * invFactor + p2.a * factor) / 255);
+}
+
+void WPngImage::Pixel8::rawInterpolate(const Pixel8& p2, Byte factor)
+{
+    *this = rawInterpolatedPixel(p2, factor);
+}
+
 WPngImage::Pixel8 operator-(WPngImage::Int32 value, const WPngImage::Pixel8& p)
 {
     return WPngImage::Pixel8
@@ -987,6 +1001,29 @@ WPngImage::Pixel16 WPngImage::Pixel16::interpolatedPixel(const Pixel16& p2, UInt
 void WPngImage::Pixel16::interpolate(const Pixel16& p2, UInt16 factor)
 {
     *this = interpolatedPixel(p2, factor);
+}
+
+WPngImage::Pixel16 WPngImage::Pixel16::rawInterpolatedPixel(const Pixel16& p2, UInt16 factor) const
+{
+#if WPNGIMAGE_RESTRICT_TO_CPP98
+    if(sizeof(StdSize_t) < 8)
+        return Pixel16(PixelF(*this).rawInterpolatedPixel(PixelF(p2), Float(factor / 65535.0f)));
+
+    typedef StdSize_t UInt64;
+#else
+    using UInt64 = std::uint_fast64_t;
+#endif
+
+    const UInt64 invFactor = 65535 - factor;
+    return Pixel16((r * invFactor + p2.r * factor) / 65535,
+                   (g * invFactor + p2.g * factor) / 65535,
+                   (b * invFactor + p2.b * factor) / 65535,
+                   (a * invFactor + p2.a * factor) / 65535);
+}
+
+void WPngImage::Pixel16::rawInterpolate(const Pixel16& p2, UInt16 factor)
+{
+    *this = rawInterpolatedPixel(p2, factor);
 }
 
 WPngImage::Pixel16 operator-(WPngImage::Int32 value, const WPngImage::Pixel16& p)
@@ -1047,6 +1084,20 @@ WPngImage::PixelF WPngImage::PixelF::interpolatedPixel(const PixelF& p2, Float f
 void WPngImage::PixelF::interpolate(const PixelF& p, Float factor)
 {
     *this = interpolatedPixel(p, factor);
+}
+
+WPngImage::PixelF WPngImage::PixelF::rawInterpolatedPixel(const PixelF& p2, Float factor) const
+{
+    const Float invFactor = 1.0f - factor;
+    return PixelF(r * invFactor + p2.r * factor,
+                  g * invFactor + p2.g * factor,
+                  b * invFactor + p2.b * factor,
+                  a * invFactor + p2.a * factor);
+}
+
+void WPngImage::PixelF::rawInterpolate(const PixelF& p, Float factor)
+{
+    *this = rawInterpolatedPixel(p, factor);
 }
 
 WPngImage::PixelF operator-(WPngImage::Float value, const WPngImage::PixelF& p)

@@ -1372,10 +1372,16 @@ WPngImage::PixelF average2 = pixel1.averagedPixel(pixel2, pixel3, pixel4);</pre>
 <h4>Interpolating between pixels</h4>
 
 <pre>void interpolate(const Pixel_t&amp;, CT factor);
-Pixel_t interpolatedPixel(const Pixel_t&amp;, CT factor) const;</pre>
+Pixel_t interpolatedPixel(const Pixel_t&amp;, CT factor) const;
 
-<p>Calculates proper (alpha-aware) interpolation between this pixel and the one given
-  as parameter.</p>
+void rawInterpolate(const Pixel_t&amp;, CT factor);
+Pixel_t rawInterpolatedPixel(const Pixel_t&amp;, CT factor) const;</pre>
+
+<p>The first pair of functions calculates proper (alpha-aware) interpolation between this
+  pixel and the one given as parameter. The second pair calculates a simple component-wise
+  interpolation without using the alpha channel as a weighting factor. (The latter will cause,
+  for example, a completely transparent pixel to affect the color of the interpolation.
+  However, in some situations this might be the desired behavior.)</p>
 
 <p>The factor parameter determines the interpolation position between the two pixels. A factor
   of 0 yields fully the color of this pixel, a factor of the maximum component value yielding
