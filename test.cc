@@ -1074,6 +1074,18 @@ static bool testImages1()
 
     for(int patternIndex = 0; patternIndex < kPatternsAmount; ++patternIndex)
     {
+        const int width = 100, height = 150;
+        WPngImage smallerTestImage(50, 60, WPngImage::Pixel8(0, 1, 2, 3));
+        setTestPattern<WPngImage::Pixel8>(patternIndex, image, width, height);
+        smallerTestImage = image;
+        if(!checkTestPattern<WPngImage::Pixel8>(patternIndex, smallerTestImage, width, height))
+            ERRORRETIMAGECOMP;
+
+        WPngImage largerTestImage(200, 260, WPngImage::Pixel8(0, 1, 2, 3));
+        largerTestImage = image;
+        if(!checkTestPattern<WPngImage::Pixel8>(patternIndex, largerTestImage, width, height))
+            ERRORRETIMAGECOMP;
+
         for(int heightSizeIndex = 0; heightSizeIndex < sideSizesAmount; ++heightSizeIndex)
         {
             const int height = sideSizes[heightSizeIndex];
@@ -2666,6 +2678,84 @@ static bool testTransform()
 
 
 //============================================================================
+// Test alpha premultiply
+//============================================================================
+template<typename Pixel_t, unsigned kAmount>
+static bool testAlphaPremultiply(const Pixel_t (&pixels)[kAmount][2])
+{
+    for(unsigned i = 0; i < kAmount; ++i)
+    {
+        const Pixel_t p = pixels[i][0].premultipliedAlphaPixel();
+        COMPAREP(p, pixels[i][1]);
+        Pixel_t p2 = pixels[i][0];
+        p2.premultiplyAlpha();
+        COMPAREP(p2, pixels[i][1]);
+    }
+
+    WPngImage image(50, 60, Pixel_t(0));
+    unsigned index = 0;
+    for(int y = 0; y < image.height(); ++y)
+        for(int x = 0; x < image.width(); ++x)
+        {
+            image.set(x, y, pixels[index][0]);
+            if(++index == kAmount) index = 0;
+        }
+
+    image.premultiplyAlpha();
+
+    for(int y = 0; y < image.height(); ++y)
+        for(int x = 0; x < image.width(); ++x)
+        {
+            Pixel_t p;
+            getPixel(image, x, y, p);
+            COMPAREP(p, pixels[index][1]);
+            if(++index == kAmount) index = 0;
+        }
+
+    return true;
+}
+
+static bool testAlphaPremultiply()
+{
+    const WPngImage::Pixel8 pixel8s[][2] =
+    {
+        { WPngImage::Pixel8(0, 0, 0, 255), WPngImage::Pixel8(0, 0, 0, 255) },
+        { WPngImage::Pixel8(50, 60, 70, 255), WPngImage::Pixel8(50, 60, 70, 255) },
+        { WPngImage::Pixel8(50, 60, 70, 64), WPngImage::Pixel8(13, 15, 18, 64) },
+        { WPngImage::Pixel8(255, 128, 64, 50), WPngImage::Pixel8(50, 25, 13, 50) },
+        { WPngImage::Pixel8(255, 128, 64, 0), WPngImage::Pixel8(0, 0, 0, 0) },
+    };
+
+    const WPngImage::Pixel16 pixel16s[][2] =
+    {
+        { WPngImage::Pixel16(0, 0, 0, 65535),
+          WPngImage::Pixel16(0, 0, 0, 65535) },
+        { WPngImage::Pixel16(5000, 6000, 7000, 65535),
+          WPngImage::Pixel16(5000, 6000, 7000, 65535) },
+        { WPngImage::Pixel16(5000, 6000, 7000, 6400),
+          WPngImage::Pixel16(488, 586, 684, 6400) },
+        { WPngImage::Pixel16(65535, 32768, 16384, 5000),
+          WPngImage::Pixel16(5000, 2500, 1250, 5000) },
+        { WPngImage::Pixel16(65535, 32768, 16384, 0),
+          WPngImage::Pixel16(0, 0, 0, 0) },
+    };
+
+    const WPngImage::PixelF pixelFs[][2] =
+    {
+        { WPngImage::PixelF(0, 0, 0, 1), WPngImage::PixelF(0, 0, 0, 1) },
+        { WPngImage::PixelF(0.2, 0.5, 0.7, 1), WPngImage::PixelF(0.2, 0.5, 0.7, 1) },
+        { WPngImage::PixelF(1, 0.8, 0.5, 0.5), WPngImage::PixelF(0.5, 0.4, 0.25, 0.5) },
+        { WPngImage::PixelF(1, 0.8, 0.5, 0), WPngImage::PixelF(0, 0, 0, 0) },
+    };
+
+    if(!testAlphaPremultiply(pixel8s)) ERRORRET;
+    if(!testAlphaPremultiply(pixel16s)) ERRORRET;
+    if(!testAlphaPremultiply(pixelFs)) ERRORRET;
+    return true;
+}
+
+
+//============================================================================
 // Test constexprness
 //============================================================================
 #if !WPNGIMAGE_RESTRICT_TO_CPP98
@@ -2748,6 +2838,7 @@ int main()
     if(!testImages3()) ERRORRET1;
     if(!testSavingAndLoading()) ERRORRET1;
     if(!testTransform()) ERRORRET1;
+    if(!testAlphaPremultiply()) ERRORRET1;
 
     std::remove(kTestPngImageFileName);
     std::cout << "Ok.\n";

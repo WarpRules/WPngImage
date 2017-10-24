@@ -188,6 +188,9 @@ WPngImage::IOStatus WPngImage::performSaveImageToRAM
       case kPngFileFormat_GA16:
           bitDepth = 16;
           bytesPerComponent = 2;
+          colorType = writeAlphas ? LCT_GREY_ALPHA : LCT_GREY;
+          colorComponents = writeAlphas ? 2 : 1;
+          break;
 
       case kPngFileFormat_GA8:
           colorType = writeAlphas ? LCT_GREY_ALPHA : LCT_GREY;
@@ -197,6 +200,9 @@ WPngImage::IOStatus WPngImage::performSaveImageToRAM
       case kPngFileFormat_RGBA16:
           bitDepth = 16;
           bytesPerComponent = 2;
+          colorType = writeAlphas ? LCT_RGBA : LCT_RGB;
+          colorComponents = writeAlphas ? 4 : 3;
+          break;
 
       case kPngFileFormat_none:
       case kPngFileFormat_RGBA8:

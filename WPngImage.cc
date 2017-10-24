@@ -170,6 +170,21 @@ namespace
         return v2 == 0.0f ? std::numeric_limits<Float>::max() : v1 / v2;
     }
 
+    inline Byte componentMultipliedByAlpha(Byte c, Byte a)
+    {
+        return Byte((UInt32(c) * UInt32(a) + 127) / UInt32(255));
+    }
+
+    inline UInt16 componentMultipliedByAlpha(UInt16 c, UInt16 a)
+    {
+        return UInt16((UInt32(c) * UInt32(a) + 32767) / UInt32(65535));
+    }
+
+    inline Float componentMultipliedByAlpha(Float c, Float a)
+    {
+        return c * a;
+    }
+
 
     //------------------------------------------------------------------------
     // Averaging and blending between color components
@@ -946,6 +961,21 @@ void WPngImage::Pixel8::rawInterpolate(const Pixel8& p2, Byte factor)
     *this = rawInterpolatedPixel(p2, factor);
 }
 
+void WPngImage::Pixel8::premultiplyAlpha()
+{
+    r = componentMultipliedByAlpha(r, a);
+    g = componentMultipliedByAlpha(g, a);
+    b = componentMultipliedByAlpha(b, a);
+}
+
+WPngImage::Pixel8 WPngImage::Pixel8::premultipliedAlphaPixel() const
+{
+    return WPngImage::Pixel8
+        (componentMultipliedByAlpha(r, a),
+         componentMultipliedByAlpha(g, a),
+         componentMultipliedByAlpha(b, a), a);
+}
+
 WPngImage::Pixel8 operator-(WPngImage::Int32 value, const WPngImage::Pixel8& p)
 {
     return WPngImage::Pixel8
@@ -1026,6 +1056,21 @@ void WPngImage::Pixel16::rawInterpolate(const Pixel16& p2, UInt16 factor)
     *this = rawInterpolatedPixel(p2, factor);
 }
 
+void WPngImage::Pixel16::premultiplyAlpha()
+{
+    r = componentMultipliedByAlpha(r, a);
+    g = componentMultipliedByAlpha(g, a);
+    b = componentMultipliedByAlpha(b, a);
+}
+
+WPngImage::Pixel16 WPngImage::Pixel16::premultipliedAlphaPixel() const
+{
+    return WPngImage::Pixel16
+        (componentMultipliedByAlpha(r, a),
+         componentMultipliedByAlpha(g, a),
+         componentMultipliedByAlpha(b, a), a);
+}
+
 WPngImage::Pixel16 operator-(WPngImage::Int32 value, const WPngImage::Pixel16& p)
 {
     return WPngImage::Pixel16
@@ -1100,6 +1145,18 @@ void WPngImage::PixelF::rawInterpolate(const PixelF& p, Float factor)
     *this = rawInterpolatedPixel(p, factor);
 }
 
+void WPngImage::PixelF::premultiplyAlpha()
+{
+    r *= a;
+    g *= a;
+    b *= a;
+}
+
+WPngImage::PixelF WPngImage::PixelF::premultipliedAlphaPixel() const
+{
+    return WPngImage::PixelF(r * a, g * a, b * a, a);
+}
+
 WPngImage::PixelF operator-(WPngImage::Float value, const WPngImage::PixelF& p)
 {
     return WPngImage::PixelF(value - p.r, value - p.g, value - p.b, p.a);
@@ -1160,6 +1217,16 @@ namespace
             const CT blendedA = blendAlphas(a, src.a);
             g = blendComponents(g, a, src.g, src.a, blendedA);
             a = blendedA;
+        }
+
+        void premultiplyAlpha()
+        {
+            g = componentMultipliedByAlpha(g, a);
+        }
+
+        PixelG premultipliedAlphaPixel() const
+        {
+            return PixelG(componentMultipliedByAlpha(g, a), a);
         }
     };
 
@@ -1243,6 +1310,7 @@ struct WPngImage::PngDataBase
     PngDataBase(PixelFormat);
     virtual ~PngDataBase() {}
 
+    virtual bool assignAllDataFrom(const PngDataBase*) = 0;
     virtual PngDataBase* createCopy() const = 0;
 
     virtual Pixel8 getPixel8(std::size_t) const = 0;
@@ -1276,6 +1344,7 @@ struct WPngImage::PngDataBase
     virtual void addLine(std::size_t, std::size_t, std::size_t, const Pixel8&, bool) = 0;
     virtual void addLine(std::size_t, std::size_t, std::size_t, const Pixel16&, bool) = 0;
     virtual void addLine(std::size_t, std::size_t, std::size_t, const PixelF&, bool) = 0;
+    virtual void premultiplyAlpha() = 0;
 };
 
 WPngImage::PngDataBase::PngDataBase(PixelFormat pixelFormat):
@@ -1291,6 +1360,7 @@ struct WPngImage::PngData: public PngDataBase
     template<typename Pixel_t>
     PngData(int, int, Pixel_t, PixelFormat);
 
+    virtual bool assignAllDataFrom(const PngDataBase*);
     virtual PngDataBase* createCopy() const;
 
     virtual Pixel8 getPixel8(std::size_t) const;
@@ -1326,6 +1396,7 @@ struct WPngImage::PngData: public PngDataBase
     virtual void addLine(std::size_t, std::size_t, std::size_t, const PixelF&, bool);
     void blendLine(std::size_t, std::size_t, std::size_t, const PixelData_t&);
     void assignLine(std::size_t, std::size_t, std::size_t, const PixelData_t&);
+    virtual void premultiplyAlpha();
 };
 
 
@@ -1341,6 +1412,17 @@ WPngImage::PngData<PixelData_t>::PngData
     PngDataBase(pixelFormat),
     mPixelData(width * height, PixelData_t(pixel))
 {}
+
+template<typename PixelData_t>
+bool WPngImage::PngData<PixelData_t>::assignAllDataFrom(const PngDataBase* src)
+{
+    const PngData<PixelData_t>* srcPngData = dynamic_cast<const PngData<PixelData_t>*>(src);
+    if(!srcPngData) return false;
+    mPixelFormat = srcPngData->mPixelFormat;
+    mPngFileFormat = srcPngData->mPngFileFormat;
+    mPixelData = srcPngData->mPixelData;
+    return true;
+}
 
 template<typename PixelData_t>
 WPngImage::PngDataBase* WPngImage::PngData<PixelData_t>::createCopy() const
@@ -1625,6 +1707,16 @@ void WPngImage::PngData<PixelData_t>::addLine
         assignLine(startIndex, length, step, PixelData_t(pixel));
 }
 
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::premultiplyAlpha()
+{
+    for(typename std::vector<PixelData_t>::iterator iter = mPixelData.begin();
+        iter != mPixelData.end(); ++iter)
+    {
+        iter->premultiplyAlpha();
+    }
+}
+
 
 //============================================================================
 // WPngImage constructors, assignment, destructor
@@ -1672,6 +1764,10 @@ WPngImage& WPngImage::operator=(const WPngImage& rhs)
     {
         mWidth = rhs.mWidth;
         mHeight = rhs.mHeight;
+
+        if(mData && rhs.mData && mData->assignAllDataFrom(rhs.mData))
+            return *this;
+
         delete mData;
         mData = rhs.mData ? rhs.mData->createCopy() : 0;
     }
@@ -2256,6 +2352,11 @@ void WPngImage::resizeCanvas(int newOriginX, int newOriginY, int newWidth, int n
         WPngImage newImage(newWidth, newHeight, pixel, currentPixelFormat());
         manageCanvasResize(newImage, newOriginX, newOriginY);
     }
+}
+
+void WPngImage::premultiplyAlpha()
+{
+    if(mData) mData->premultiplyAlpha();
 }
 
 const WPngImage::Pixel8* WPngImage::getRawPixelData8() const

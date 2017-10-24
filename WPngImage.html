@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage 1.3.1 documentation</title>
+  <title>WPngImage 1.3.2 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -79,7 +79,7 @@ code
 </head>
 
 <body>
-<h1>WPngImage 1.3.1 documentation</h1>
+<h1>WPngImage 1.3.2 documentation</h1>
 
 <p><code>WPngImage</code> is a C++ library to manage images in PNG format. It can be used
   as a completely stand-alone library using the <a href="http://lodev.org/lodepng/">lodepng</a>
@@ -149,6 +149,7 @@ code
     <li><a href="#wpngimage_drawing_lines">Drawing lines</a></li>
     <li><a href="#wpngimage_drawing_rectangles">Drawing rectangles</a></li>
     <li><a href="#wpngimage_resize_canvas">Resize canvas</a></li>
+    <li><a href="#wpngimage_premultiply_alpha">Premultiply alpha</a></li>
     <li><a href="#wpngimage_lowlevel">Low level access</a></li>
   </ul>
   <li><a href="#pixel_reference">Pixel reference</a></li>
@@ -1119,6 +1120,20 @@ void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, P
 
 
 <!---------------------------------------------------------------------------->
+<h3 id="wpngimage_premultiply_alpha">Premultiply alpha</h3>
+
+<pre>void premultiplyAlpha();</pre>
+
+<p>Multiplies each component of every pixel by the alpha value of that pixel
+  (and, in the case of the integer pixel formats, divides by the maximum component
+  value). This can be useful in some applications, where a texture needs to be
+  alpha-premultiplied before being used (eg. in OpenGL).</p>
+
+<p>The same operation is also supported for individual pixels. See the section
+  <a href="#pixel_other">Other operations</a>.</p>
+
+
+<!---------------------------------------------------------------------------->
 <h3 id="wpngimage_lowlevel">Low level access</h3>
 
 <pre>const Pixel8* getRawPixelData8() const;
@@ -1419,6 +1434,15 @@ Pixel_t grayCIEPixel() const;</pre>
 <p>These perform a colorimetric (luminance-preserving) conversion to grayscale, as defined
   by the CIE 1931 standard. This is a more complicated (and thus slightly heavier) conversion
   than the simpler weighted-average one, but is more accurate.</p>
+
+<h4>Premultiply alpha</h4>
+
+<pre>void premultiplyAlpha();
+Pixel_t premultipliedAlphaPixel() const;</pre>
+
+<p>Multiplies each component by the alpha value (and, in the case of the integer pixel
+  formats, divides by the maximum component value). This can be useful in some applications,
+  where a texture needs to be alpha-premultiplied before being used (eg. in OpenGL).</p>
 
 
 <!---------------------------------------------------------------------------->

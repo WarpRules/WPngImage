@@ -30,8 +30,8 @@
 #define WPNGIMAGE_CONSTEXPR
 #endif
 
-#define WPNGIMAGE_VERSION 0x010301
-#define WPNGIMAGE_VERSION_STRING "1.3.1"
+#define WPNGIMAGE_VERSION 0x010302
+#define WPNGIMAGE_VERSION_STRING "1.3.2"
 #define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2017 Juha Nieminen"
 
 
@@ -310,6 +310,8 @@ class WPngImage
     void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, Pixel16);
     void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, PixelF);
 
+    void premultiplyAlpha();
+
 
     //------------------------------------------------------------------------
     // Raw data
@@ -498,6 +500,9 @@ struct WPngImage::Pixel8: public WPngImage::IPixel<Pixel8, Byte>
     Pixel8 interpolatedPixel(const Pixel8&, Byte factor) const;
     void rawInterpolate(const Pixel8&, Byte factor);
     Pixel8 rawInterpolatedPixel(const Pixel8&, Byte factor) const;
+
+    void premultiplyAlpha();
+    Pixel8 premultipliedAlphaPixel() const;
 };
 
 inline WPngImage::Pixel8 operator+(WPngImage::Int32 value, const WPngImage::Pixel8& p)
@@ -546,6 +551,9 @@ struct WPngImage::Pixel16: public WPngImage::IPixel<Pixel16, UInt16>
     Pixel16 interpolatedPixel(const Pixel16&, UInt16 factor) const;
     void rawInterpolate(const Pixel16&, UInt16 factor);
     Pixel16 rawInterpolatedPixel(const Pixel16&, UInt16 factor) const;
+
+    void premultiplyAlpha();
+    Pixel16 premultipliedAlphaPixel() const;
 };
 
 inline WPngImage::Pixel16 operator+(WPngImage::Int32 value, const WPngImage::Pixel16& p)
@@ -594,6 +602,9 @@ struct WPngImage::PixelF: public WPngImage::Pixel<PixelF, Float, Float>
     PixelF interpolatedPixel(const PixelF&, Float factor) const;
     void rawInterpolate(const PixelF&, Float factor);
     PixelF rawInterpolatedPixel(const PixelF&, Float factor) const;
+
+    void premultiplyAlpha();
+    PixelF premultipliedAlphaPixel() const;
 };
 
 inline WPngImage::PixelF operator+(WPngImage::Float value, const WPngImage::PixelF& p)
