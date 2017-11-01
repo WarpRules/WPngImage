@@ -30,8 +30,8 @@
 #define WPNGIMAGE_CONSTEXPR
 #endif
 
-#define WPNGIMAGE_VERSION 0x010302
-#define WPNGIMAGE_VERSION_STRING "1.3.2"
+#define WPNGIMAGE_VERSION 0x010303
+#define WPNGIMAGE_VERSION_STRING "1.3.3"
 #define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2017 Juha Nieminen"
 
 
@@ -605,6 +605,9 @@ struct WPngImage::PixelF: public WPngImage::Pixel<PixelF, Float, Float>
 
     void premultiplyAlpha();
     PixelF premultipliedAlphaPixel() const;
+
+    void clamp();
+    PixelF clampedPixel() const;
 };
 
 inline WPngImage::PixelF operator+(WPngImage::Float value, const WPngImage::PixelF& p)

@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage 1.3.2 documentation</title>
+  <title>WPngImage 1.3.3 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -79,7 +79,7 @@ code
 </head>
 
 <body>
-<h1>WPngImage 1.3.2 documentation</h1>
+<h1>WPngImage 1.3.3 documentation</h1>
 
 <p><code>WPngImage</code> is a C++ library to manage images in PNG format. It can be used
   as a completely stand-alone library using the <a href="http://lodev.org/lodepng/">lodepng</a>
@@ -1354,7 +1354,9 @@ void setFromCMYK(Float c, Float m, Float y, Float k, Float a);</pre>
 <pre>void blendWith(const Pixel_t&amp; src);
 Pixel_t blendedPixel(const Pixel_t&amp; src) const;</pre>
 
-<p>Mixes two pixels by alpha-blending the pixel given as parameter on top of this pixel.</p>
+<p>Mixes two pixels by alpha-blending the pixel given as parameter on top of this pixel.
+  (This will have an effect if the alpha of the pixel given as parameter is different from
+  its maximum value. Else this will effectively work as an assignment.)</p>
 
 <h4>Averaging pixels</h4>
 
@@ -1443,6 +1445,18 @@ Pixel_t premultipliedAlphaPixel() const;</pre>
 <p>Multiplies each component by the alpha value (and, in the case of the integer pixel
   formats, divides by the maximum component value). This can be useful in some applications,
   where a texture needs to be alpha-premultiplied before being used (eg. in OpenGL).</p>
+
+<h4>Clamping</h4>
+
+<pre>void clamp();
+PixelF clampedPixel() const;</pre>
+
+<p>These functions are exclusive to <code>WPngImage::PixelF</code> (because it's the only
+  pixel format that can go outside its normal range).</p>
+
+<p>If any of the four components has a value larger than <code>1.0</code>, that component
+  will be clamped to <code>1.0</code>. Likewise if it's less than <code>0.0</code>, it will be
+  clamped to <code>0.0</code>.</p>
 
 
 <!---------------------------------------------------------------------------->

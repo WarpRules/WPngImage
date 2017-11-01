@@ -1157,6 +1157,25 @@ WPngImage::PixelF WPngImage::PixelF::premultipliedAlphaPixel() const
     return WPngImage::PixelF(r * a, g * a, b * a, a);
 }
 
+void WPngImage::PixelF::clamp()
+{
+    if(r > 1.0f) r = 1.0f;
+    else if(r < 0.0f) r = 0.0f;
+    if(g > 1.0f) g = 1.0f;
+    else if(g < 0.0f) g = 0.0f;
+    if(b > 1.0f) b = 1.0f;
+    else if(b < 0.0f) b = 0.0f;
+    if(a > 1.0f) a = 1.0f;
+    else if(a < 0.0f) a = 0.0f;
+}
+
+WPngImage::PixelF WPngImage::PixelF::clampedPixel() const
+{
+    WPngImage::PixelF pixel = *this;
+    pixel.clamp();
+    return pixel;
+}
+
 WPngImage::PixelF operator-(WPngImage::Float value, const WPngImage::PixelF& p)
 {
     return WPngImage::PixelF(value - p.r, value - p.g, value - p.b, p.a);
