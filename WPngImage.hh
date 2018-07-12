@@ -30,9 +30,9 @@
 #define WPNGIMAGE_CONSTEXPR
 #endif
 
-#define WPNGIMAGE_VERSION 0x010303
-#define WPNGIMAGE_VERSION_STRING "1.3.3"
-#define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2017 Juha Nieminen"
+#define WPNGIMAGE_VERSION 0x010400
+#define WPNGIMAGE_VERSION_STRING "1.4.0"
+#define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2018 Juha Nieminen"
 
 
 //============================================================================
@@ -268,6 +268,16 @@ class WPngImage
     void transform8(TransformFunc8 f, WPngImage& dest) const { transform(f, dest); }
     void transform16(TransformFunc16 f, WPngImage& dest) const { transform(f, dest); }
     void transformF(TransformFuncF f, WPngImage& dest) const { transform(f, dest); }
+
+
+    //------------------------------------------------------------------------
+    // Image transformations
+    //------------------------------------------------------------------------
+    void flipHorizontally();
+    void flipVertically();
+    void rotate180();
+    void rotate90cw();
+    void rotate90ccw();
 
 
     //------------------------------------------------------------------------

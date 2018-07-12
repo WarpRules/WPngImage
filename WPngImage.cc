@@ -8,6 +8,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <utility>
 #include <limits>
 #include <cstring>
 
@@ -1364,6 +1365,13 @@ struct WPngImage::PngDataBase
     virtual void addLine(std::size_t, std::size_t, std::size_t, const Pixel16&, bool) = 0;
     virtual void addLine(std::size_t, std::size_t, std::size_t, const PixelF&, bool) = 0;
     virtual void premultiplyAlpha() = 0;
+    virtual void flipHorizontally(int, int) = 0;
+    virtual void flipVertically(int, int) = 0;
+    virtual void rotate180(int, int) = 0;
+    virtual void rotate90cwSquare(int) = 0;
+    virtual void rotate90cwNonsquare(int, int) = 0;
+    virtual void rotate90ccwSquare(int) = 0;
+    virtual void rotate90ccwNonsquare(int, int) = 0;
 };
 
 WPngImage::PngDataBase::PngDataBase(PixelFormat pixelFormat):
@@ -1416,6 +1424,13 @@ struct WPngImage::PngData: public PngDataBase
     void blendLine(std::size_t, std::size_t, std::size_t, const PixelData_t&);
     void assignLine(std::size_t, std::size_t, std::size_t, const PixelData_t&);
     virtual void premultiplyAlpha();
+    virtual void flipHorizontally(int, int);
+    virtual void flipVertically(int, int);
+    virtual void rotate180(int, int);
+    virtual void rotate90cwSquare(int);
+    virtual void rotate90cwNonsquare(int, int);
+    virtual void rotate90ccwSquare(int);
+    virtual void rotate90ccwNonsquare(int, int);
 };
 
 
@@ -1734,6 +1749,137 @@ void WPngImage::PngData<PixelData_t>::premultiplyAlpha()
     {
         iter->premultiplyAlpha();
     }
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::flipHorizontally(int width, int height)
+{
+    const int maxX = width / 2;
+    PixelData_t *data = &mPixelData[0];
+    for(int y = 0; y < height; ++y, data += width)
+        for(int x1 = 0, x2 = width - 1; x1 < maxX; ++x1, --x2)
+            std::swap(data[x1], data[x2]);
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::flipVertically(int width, int height)
+{
+    const int maxY = height / 2;
+    PixelData_t *data1 = &mPixelData[0], *data2 = &mPixelData[width * (height - 1)];
+    for(int y = 0; y < maxY; ++y, data1 += width, data2 -= width)
+        for(int x = 0; x < width; ++x)
+            std::swap(data1[x], data2[x]);
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::rotate180(int width, int height)
+{
+    const int maxY = height / 2;
+    PixelData_t *data1 = &mPixelData[0], *data2 = &mPixelData[width * (height - 1)];
+    for(int y = 0; y < maxY; ++y, data1 += width, data2 -= width)
+        for(int x1 = 0, x2 = width - 1; x1 < width; ++x1, --x2)
+            std::swap(data1[x1], data2[x2]);
+
+    if(height % 2 == 1)
+    {
+        const int maxX = width / 2;
+        for(int x1 = 0, x2 = width - 1; x1 < maxX; ++x1, --x2)
+            std::swap(data1[x1], data1[x2]);
+    }
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::rotate90cwSquare(int width)
+{
+    PixelData_t *startPtr1 = &mPixelData[0];
+    PixelData_t *startPtr2 = &mPixelData[width - 1];
+    PixelData_t *startPtr3 = &mPixelData[width*width - 1];
+    PixelData_t *startPtr4 = &mPixelData[width*(width - 1)];
+
+    for(int length = width - 1; length > 0; length -= 2)
+    {
+        PixelData_t *ptr1 = startPtr1, *ptr2 = startPtr2, *ptr3 = startPtr3, *ptr4 = startPtr4;
+        for(int x = 0; x < length; ++x)
+        {
+            const PixelData_t pixel = *ptr4;
+            *ptr4 = *ptr3;
+            *ptr3 = *ptr2;
+            *ptr2 = *ptr1;
+            *ptr1 = pixel;
+            ++ptr1;
+            ptr2 += width;
+            --ptr3;
+            ptr4 -= width;
+        }
+
+        startPtr1 += width + 1;
+        startPtr2 += width - 1;
+        startPtr3 -= width + 1;
+        startPtr4 -= width - 1;
+    }
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::rotate90cwNonsquare(int width, int height)
+{
+    std::vector<PixelData_t> newPixelData;
+    newPixelData.reserve(mPixelData.size());
+
+    PixelData_t *data = &mPixelData[width * (height - 1)];
+    const int ptrOffset = width * height + 1;
+
+    for(int x = 0; x < width; ++x, data += ptrOffset)
+        for(int y = 0; y < height; ++y, data -= width)
+            newPixelData.push_back(*data);
+
+    mPixelData.swap(newPixelData);
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::rotate90ccwSquare(int width)
+{
+    PixelData_t *startPtr1 = &mPixelData[0];
+    PixelData_t *startPtr2 = &mPixelData[width - 1];
+    PixelData_t *startPtr3 = &mPixelData[width*width - 1];
+    PixelData_t *startPtr4 = &mPixelData[width*(width - 1)];
+
+    for(int length = width - 1; length > 0; length -= 2)
+    {
+        PixelData_t *ptr1 = startPtr1, *ptr2 = startPtr2, *ptr3 = startPtr3, *ptr4 = startPtr4;
+        for(int x = 0; x < length; ++x)
+        {
+            const PixelData_t pixel = *ptr1;
+            *ptr1 = *ptr2;
+            *ptr2 = *ptr3;
+            *ptr3 = *ptr4;
+            *ptr4 = pixel;
+            ++ptr1;
+            ptr2 += width;
+            --ptr3;
+            ptr4 -= width;
+        }
+
+        startPtr1 += width + 1;
+        startPtr2 += width - 1;
+        startPtr3 -= width + 1;
+        startPtr4 -= width - 1;
+    }
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::rotate90ccwNonsquare(int width, int height)
+{
+    std::vector<PixelData_t> newPixelData;
+    newPixelData.reserve(mPixelData.size());
+
+    PixelData_t *data = &mPixelData[width - 1];
+    const int ptrOffset = width * height + 1;
+
+    for(int x = 0; x < width; ++x, data -= ptrOffset)
+        for(int y = 0; y < height; ++y, data += width)
+            newPixelData.push_back(*data);
+
+    mPixelData.swap(newPixelData);
 }
 
 
@@ -2091,6 +2237,57 @@ void WPngImage::setPixel(std::size_t index, const Pixel8& p)
 void WPngImage::setPixel(std::size_t index, const Pixel16& p)
 {
     mData->setPixel(index, p);
+}
+
+
+//============================================================================
+// Image transformations
+//============================================================================
+void WPngImage::flipHorizontally()
+{
+    if(mData) mData->flipHorizontally(mWidth, mHeight);
+}
+
+void WPngImage::flipVertically()
+{
+    if(mData) mData->flipVertically(mWidth, mHeight);
+}
+
+void WPngImage::rotate180()
+{
+    if(mData) mData->rotate180(mWidth, mHeight);
+}
+
+void WPngImage::rotate90cw()
+{
+    if(mData)
+    {
+        if(mWidth == mHeight)
+        {
+            mData->rotate90cwSquare(mWidth);
+        }
+        else
+        {
+            mData->rotate90cwNonsquare(mWidth, mHeight);
+            std::swap(mWidth, mHeight);
+        }
+    }
+}
+
+void WPngImage::rotate90ccw()
+{
+    if(mData)
+    {
+        if(mWidth == mHeight)
+        {
+            mData->rotate90ccwSquare(mWidth);
+        }
+        else
+        {
+            mData->rotate90ccwNonsquare(mWidth, mHeight);
+            std::swap(mWidth, mHeight);
+        }
+    }
 }
 
 

@@ -2767,6 +2767,117 @@ static bool testAlphaPremultiply()
 
 
 //============================================================================
+// Test image flipping and rotation
+//============================================================================
+static bool testFlipHorizontally(WPngImage image)
+{
+    const int width = image.width(), height = image.height();
+    image.flipHorizontally();
+
+    for(int y = 0, counter = 0; y < height; ++y)
+        for(int x = width - 1; x >= 0; --x, ++counter)
+            COMPARE(image.get8(x, y), counter, counter+1, counter+2, 255);
+
+    return true;
+}
+
+static bool testFlipVertically(WPngImage image)
+{
+    const int width = image.width(), height = image.height();
+    image.flipVertically();
+
+    for(int y = height - 1, counter = 0; y >= 0; --y)
+        for(int x = 0; x < width; ++x, ++counter)
+            COMPARE(image.get8(x, y), counter, counter+1, counter+2, 255);
+
+    return true;
+}
+
+static bool testRotate180(WPngImage image)
+{
+    const int width = image.width(), height = image.height();
+    image.rotate180();
+
+    for(int y = height - 1, counter = 0; y >= 0; --y)
+        for(int x = width - 1; x >= 0; --x, ++counter)
+            COMPARE(image.get8(x, y), counter, counter+1, counter+2, 255);
+
+    return true;
+}
+
+static bool testRotate90cw(WPngImage image)
+{
+    const int originalWidth = image.width(), originalHeight = image.height();
+    image.rotate90cw();
+    const int width = image.width(), height = image.height();
+
+    if(originalWidth != height || originalHeight != width)
+    {
+        std::cout << "Original image is (" << originalWidth
+                  << ", " << originalHeight
+                  << "), but rotated image is (" << width
+                  << ", " << height << ")\n"; ERRORRET;
+    }
+
+    for(int x = width - 1, counter = 0; x >= 0; --x)
+        for(int y = 0; y < height; ++y, ++counter)
+            COMPARE(image.get8(x, y), counter, counter+1, counter+2, 255);
+
+    return true;
+}
+
+static bool testRotate90ccw(WPngImage image)
+{
+    const int originalWidth = image.width(), originalHeight = image.height();
+    image.rotate90ccw();
+    const int width = image.width(), height = image.height();
+
+    if(originalWidth != height || originalHeight != width)
+    {
+        std::cout << "Original image is (" << originalWidth
+                  << ", " << originalHeight
+                  << "), but rotated image is (" << width
+                  << ", " << height << ")\n"; ERRORRET;
+    }
+
+    for(int x = 0, counter = 0; x < width; ++x)
+        for(int y = height - 1; y >= 0; --y, ++counter)
+            COMPARE(image.get8(x, y), counter, counter+1, counter+2, 255);
+
+    return true;
+}
+
+static bool testFlippingAndRotation()
+{
+    const int dimensions[] = { 1, 2, 3, 4, 5, 11, 12, 13, 25, 26, 27, 31, 32, 33,
+                               55, 56, 57, 99, 100, 101, 127, 128, 200, 254, 255 };
+    const int dAmount = sizeof(dimensions) / sizeof(*dimensions);
+
+    for(int heightInd = 1; heightInd < dAmount; ++heightInd)
+    {
+        const int height = dimensions[heightInd];
+        for(int widthInd = 1; widthInd < dAmount; ++widthInd)
+        {
+            const int width = dimensions[widthInd];
+            WPngImage image(width, height);
+
+            for(int y = 0, counter = 0; y < height; ++y)
+                for(int x = 0; x < width; ++x, ++counter)
+                    image.set(x, y, WPngImage::Pixel8(counter, counter+1, counter+2));
+
+            if(!testFlipHorizontally(image)) ERRORRET;
+            if(!testFlipVertically(image)) ERRORRET;
+            if(!testRotate180(image)) ERRORRET;
+            if(!testRotate90cw(image)) ERRORRET;
+            if(!testRotate90ccw(image)) ERRORRET;
+        }
+    }
+
+    return true;
+}
+
+
+//============================================================================
 // Test constexprness
 //============================================================================
 #if !WPNGIMAGE_RESTRICT_TO_CPP98
@@ -2850,6 +2961,7 @@ int main()
     if(!testSavingAndLoading()) ERRORRET1;
     if(!testTransform()) ERRORRET1;
     if(!testAlphaPremultiply()) ERRORRET1;
+    if(!testFlippingAndRotation()) ERRORRET1;
 
     std::remove(kTestPngImageFileName);
     std::cout << "Ok.\n";
