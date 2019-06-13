@@ -1,0 +1,225 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>WColorSequence documentation</title>
+  <style type="text/css"> <!--
+html
+{
+  background-color: #DDDDDD;
+}
+
+body
+{
+  background-color: white;
+  margin-left: 5%;
+  margin-top: 16px;
+  margin-right: 5%;
+  padding-top: 2em;
+  padding-left: 7%;
+  padding-right: 7%;
+  padding-bottom: 2%;
+  border-color: black;
+  border: solid;
+  border-width: 1px;
+}
+
+h1
+{
+  text-align: center;
+  background-color: #FFEEA0;
+  padding-bottom: 0.2em;
+  padding-top: 0.1em;
+}
+
+h2
+{
+  background-color: #FFE0A0;
+  padding-left: 0.5em;
+}
+
+h3
+{
+  background-color: #FFFFA0;
+}
+
+h4
+{
+  background-color: #FFFFD0;
+}
+
+li
+{
+  padding-top: 0.3em;
+}
+
+pre
+{
+  background-color: #E0E0E0;
+  padding-left: 1em;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-color: black;
+  border: solid;
+  border-width: 1px;
+  color: #004070;
+}
+
+code
+{
+  font-family: monospace;
+  color: #206000;
+}
+
+.comment
+{
+  color: #008000;
+}
+--> </style>
+</head>
+
+<body>
+<h1>WColorSequence documentation</h1>
+
+<p>This is a small utility class to easily create interpolated color sequences.
+  A list of two or more key colors can be specified, which will form a linear sequence,
+  and an interpolated color along the sequence can be retrieved. For example, a color
+  sequence defined as:</p>
+
+<pre>const WColorSequence8::Entry entries[] =
+{
+    { { 0, 30, 180 }, 1.0 },
+    { { 80, 255, 0 }, 1.0 },
+    { { 255, 200, 130 }, 0.5 },
+    { { 255, 255, 255 }, 0.25 }
+};</pre>
+
+<p>where each entry consists of a color and an (optional) length (which defaults to <code>1.0</code>
+  if not specified) will result in a color sequence like this:</p>
+
+<p><center><img src="DocumentationImages/SimpleColorSequence.png" /></center></p>
+
+<p>This class does not itself draw anything. It simply returns pixel values from the sequence.</p>
+
+<p>The colors can be interpolated beyond the fist and last entries, and different mapping types
+  are provided to define how these values outside the range are interpreted. See the
+  <code>Settings</code> documentation below.</p>
+
+<p>NOTE: Currently this class requires C++11 support. It cannot be compiled in C++98 mode.</p>
+
+<h2>Example</h2>
+
+<pre>const WColorSequence8::Entry entries[] =
+{
+    { { 0, 30, 180 }, 1.0 },
+    { { 80, 255, 0 }, 1.0 },
+    { { 255, 200, 130 }, 0.5 },
+    { { 255, 255, 255 }, 0.25 }
+};
+
+const WColorSequence8::Settings settings;
+settings.mappingType = WColorSequence8::MappingType::cyclic;
+
+WColorSequence8 sequence(entries, settings, false);
+
+WPngImage::Color8 color = sequence.getInterpolatedPixel(0.125);</pre>
+
+<p>(Note that this is not the only way of initializing the class with color entries.
+  Other ways are documented below.)</p>
+
+<h2>WColorSequence class and aliases</h2>
+
+<p><code>WColorSequence</code> is itself a template class taking a <code>WPngImage</code> pixel
+  type as a template parameter.</p>
+
+<pre>template&lt;typename Pixel_t&gt;
+class WColorSequence;</pre>
+
+<p>The following type aliases are provided for convenience:</p>
+
+<pre>using WColorSequence8 = WColorSequence&lt;WPngImage::Pixel8&gt;;
+using WColorSequence16 = WColorSequence&lt;WPngImage::Pixel16&gt;;
+using WColorSequenceF = WColorSequence&lt;WPngImage::PixelF&gt;;</pre>
+
+<h2>WColorSequence::Entry</h2>
+
+<p>The <code>Entry</code> struct defines a key color in the sequence, and a length value to
+  the next color in the sequence.</p>
+
+<pre>struct Entry
+{
+    Pixel_t color;
+    Float length; <span class="comment">// Default is 1.0</span>
+
+    Entry();
+    Entry(Pixel_t c);
+    Entry(Pixel_t c, Float l);
+};</pre>
+
+<p>The <code>length</code> member specifies the distance between this entry and the
+  next one. (The actual magnitude of this value is not very relevant. The relevant
+  thing is the relative sizes of these length values.)</p>
+
+<p>This class offers several ways of defining a color sequence using values of type
+  <code>Entry</code>. One way is to create an array of entries, as exemplified at the
+  beginning of this documentation. This is not the only way. The different ways of
+  initializing this class with a color sequence are specified in the constructors
+  documentation below.</p>
+
+<h2>WColorSequence::Settings</h2>
+
+<p>This struct is used to define how values before the first entry and after the last
+  entry are interpreted, how the <code>length</code> values are interpreted, and whether
+  the interpolation should be alpha-aware or not:</p>
+
+<pre>struct Settings
+{
+    MappingType mappingType = MappingType::repeating;
+    bool normalizedMapping = true;
+    bool alphaAwareInterpolation = true;
+
+    Settings() {}
+    Settings(MappingType t, bool n, bool a)
+};</pre>
+
+<p>The different mapping types are described in the next section.</p>
+
+<p>If <code>normalizedMapping</code> is <code>true</code>, then the <code>position</code>
+  parameter given to the <code>getInterpolatedPixel()</code> function (documented below)
+  will be interpreted such that <code>0.0</code> will refer to the start of the color
+  sequence and <code>1.0</code> will refer to the end of the sequence.</p>
+
+<p>If <code>normalizedMapping</code> is <code>false</code>, then the <code>position</code>
+  value that will refer to the end of the sequence will be the sum of all <code>length</code>
+  values except the last one (unless the <code>repeating</code> mapping type is used). So,
+  in the example given at the beginning of this documentation, the <code>position</code>
+  value <code>2.5</code> will be interpreted as the end of the sequence (or if the
+  <code>repeating</code> mapping type is used, <code>2.75</code>.)</p>
+
+<h2>WColorSequence::MappingType</h2>
+
+<p>This is an enumeration with the following values:</p>
+
+<ul>
+  <li><code>MappingType::clamp</code>: Positions prior to the first entry will simply return
+    the first color. Positions after the last entry will simply return the last color.</li>
+  <li><code>MappingType::cyclic</code>: The sequence will immediately jump from the last
+    entry to the first one. The <code>length</code> of the last entry is ignored. Note that if
+    the last color is not the same as the first one, this will cause a hard transition.</li>
+  <li><code>MappingType::repeating</code>: The sequence is interpreted as if the entries
+    had been repeated over and over. This is similar to <code>cyclic</code> except that the
+    last entry will interpolate to the first one (using the <code>length</code> value of the
+    last entry.)</li>
+  <li><code>MappingType::mirroring</code>: Positions will be interpreted as if going back and
+    forth along the sequence.</li>
+</ul>
+
+<p>Visualization of all the mapping types:</p>
+
+<p><center><img src="DocumentationImages/MappingTypes.png" /></center></p>
+
+<h2>Constructors and initialization</h2>
+
+<p>(TODO)</p>
+
+</body></html>

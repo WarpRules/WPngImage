@@ -27,24 +27,28 @@ static const char* const kTestPngImageFileName = "WPngImage_testing.png";
 //============================================================================
 // Pixel and color ostream output operators
 //============================================================================
+#define P_DELIM_O "{"
+#define P_DELIM_C "}"
 static std::ostream& operator<<(std::ostream& os, const WPngImage::Pixel8& p)
-{ return os << "(" << int(p.r) << ", " << int(p.g) << ", " << int(p.b) << ", " << int(p.a) << ")"; }
+{ return os << P_DELIM_O << int(p.r) << ", " << int(p.g) << ", " << int(p.b) << ", "
+            << int(p.a) << P_DELIM_C; }
 static std::ostream& operator<<(std::ostream& os, const WPngImage::Pixel16& p)
-{ return os << "(" << p.r << ", " << p.g << ", " << p.b << ", " << p.a << ")"; }
+{ return os << P_DELIM_O << p.r << ", " << p.g << ", " << p.b << ", " << p.a << P_DELIM_C; }
 static std::ostream& operator<<(std::ostream& os, const WPngImage::PixelF& p)
-{ return os << "(" << p.r << ", " << p.g << ", " << p.b << ", " << p.a << ")"; }
+{ return os << P_DELIM_O << p.r << ", " << p.g << ", " << p.b << ", " << p.a << P_DELIM_C; }
 static std::ostream& operator<<(std::ostream& os, const WPngImage::HSV& p)
-{ return os << "(" << p.h << ", " << p.s << ", " << p.v << ", " << p.a << ")"; }
+{ return os << P_DELIM_O << p.h << ", " << p.s << ", " << p.v << ", " << p.a << P_DELIM_C; }
 static std::ostream& operator<<(std::ostream& os, const WPngImage::HSL& p)
-{ return os << "(" << p.h << ", " << p.s << ", " << p.l << ", " << p.a << ")"; }
+{ return os << P_DELIM_O << p.h << ", " << p.s << ", " << p.l << ", " << p.a << P_DELIM_C; }
 static std::ostream& operator<<(std::ostream& os, const WPngImage::XYZ& p)
-{ return os << "(" << p.x << ", " << p.y << ", " << p.z << ", " << p.a << ")"; }
+{ return os << P_DELIM_O << p.x << ", " << p.y << ", " << p.z << ", " << p.a << P_DELIM_C; }
 static std::ostream& operator<<(std::ostream& os, const WPngImage::YXY& p)
-{ return os << "(" << p.Y << ", " << p.x << ", " << p.y << ", " << p.a << ")"; }
+{ return os << P_DELIM_O << p.Y << ", " << p.x << ", " << p.y << ", " << p.a << P_DELIM_C; }
 static std::ostream& operator<<(std::ostream& os, const WPngImage::CMY& p)
-{ return os << "(" << p.c << ", " << p.m << ", " << p.y << ", " << p.a << ")"; }
+{ return os << P_DELIM_O << p.c << ", " << p.m << ", " << p.y << ", " << p.a << P_DELIM_C; }
 static std::ostream& operator<<(std::ostream& os, const WPngImage::CMYK& p)
-{ return os << "(" << p.c << ", " << p.m << ", " << p.y << ", " << p.k << ", " << p.a << ")"; }
+{ return os << P_DELIM_O << p.c << ", " << p.m << ", " << p.y << ", " << p.k << ", "
+            << p.a << P_DELIM_C; }
 
 
 //============================================================================
@@ -2930,6 +2934,185 @@ static_assert(kPF_1 == kPF_6 && kPF_2 != kPF_3 && kPF_4 != kPF_5, "Comparison fa
 
 
 //============================================================================
+// Test WColorSequence
+//============================================================================
+#if !WPNGIMAGE_RESTRICT_TO_CPP98
+#include "utils/WColorSequence.hh"
+
+using WCS8 = WColorSequence8;
+using WCS16 = WColorSequence16;
+using WCSF = WColorSequenceF;
+
+static const WCS8::Entry kWCS8_1[] =
+{ { { 0, 0, 0 } }, { { 64, 128, 255 } }, { { 255, 255, 255 } } };
+
+static const WCS16::Entry kWCS16_1[] =
+{ { { 0, 0, 0 } }, { { 16384, 32768, 65535 } }, { { 65535, 65535, 65535 } } };
+
+static const WCSF::Entry kWCSF_1[] =
+{ { { 0, 0, 0 } }, { { 0.25, 0.5, 1.0 } }, { { 1.0, 1.0, 1.0 } } };
+
+static const std::size_t kWCSResultPixelsAmount = 9;
+static const double kWCSRangeStart = -0.5, kWCSRangeStep = 0.25;
+
+template<typename Pixel_t>
+struct WCSData
+{
+    typename WColorSequence<Pixel_t>::Settings settings;
+    Pixel_t resultPixels[kWCSResultPixelsAmount];
+};
+
+const WCSData<WPngImage::Pixel8> kWCSData8_1[] =
+{
+    {
+        { WCS8::MappingType::clamp, true, true },
+        { {0, 0, 0, 255}, {0, 0, 0, 255}, {0, 0, 0, 255}, {31, 63, 127, 255}, {64, 128, 255, 255},
+          {159, 191, 255, 255}, {255, 255, 255, 255}, {255, 255, 255, 255}, {255, 255, 255, 255} }
+    },
+    {
+        { WCS8::MappingType::cyclic, true, true },
+        { {64, 128, 255, 255}, {159, 191, 255, 255}, {0, 0, 0, 255}, {31, 63, 127, 255},
+          {64, 128, 255, 255}, {159, 191, 255, 255}, {0, 0, 0, 255}, {31, 63, 127, 255},
+          {64, 128, 255, 255} }
+    },
+    {
+        { WCS8::MappingType::repeating, true, true },
+        { {159, 191, 255, 255}, {192, 192, 192, 255}, {0, 0, 0, 255}, {47, 95, 191, 255},
+          {159, 191, 255, 255}, {192, 192, 192, 255}, {0, 0, 0, 255}, {47, 95, 191, 255},
+          {159, 191, 255, 255} }
+    },
+    {
+        { WCS8::MappingType::mirroring, true, true },
+        { {64, 128, 255, 255}, {31, 63, 127, 255}, {0, 0, 0, 255}, {31, 63, 127, 255},
+          {64, 128, 255, 255}, {159, 191, 255, 255}, {255, 255, 255, 255}, {159, 191, 255, 255},
+          {64, 128, 255, 255} }
+    }
+};
+
+const WCSData<WPngImage::Pixel16> kWCSData16_1[] =
+{
+    {
+        { WCS16::MappingType::clamp, true, true },
+        { {0, 0, 0, 65535}, {0, 0, 0, 65535}, {0, 0, 0, 65535}, {8191, 16383, 32767, 65535},
+          {16384, 32768, 65535, 65535}, {40959, 49151, 65535, 65535}, {65535, 65535, 65535, 65535},
+          {65535, 65535, 65535, 65535}, {65535, 65535, 65535, 65535} }
+    },
+    {
+        { WCS16::MappingType::cyclic, true, true },
+        { {16384, 32768, 65535, 65535}, {40959, 49151, 65535, 65535}, {0, 0, 0, 65535},
+          {8191, 16383, 32767, 65535}, {16384, 32768, 65535, 65535}, {40959, 49151, 65535, 65535},
+          {0, 0, 0, 65535}, {8191, 16383, 32767, 65535}, {16384, 32768, 65535, 65535} }
+    },
+    {
+        { WCS16::MappingType::repeating, true, true },
+        { {40959, 49151, 65535, 65535}, {49152, 49152, 49152, 65535}, {0, 0, 0, 65535},
+          {12287, 24575, 49151, 65535}, {40959, 49151, 65535, 65535}, {49152, 49152, 49152, 65535},
+          {0, 0, 0, 65535}, {12287, 24575, 49151, 65535}, {40959, 49151, 65535, 65535} }
+    },
+    {
+        { WCS16::MappingType::mirroring, true, true },
+        { {16384, 32768, 65535, 65535}, {8191, 16383, 32767, 65535}, {0, 0, 0, 65535},
+          {8191, 16383, 32767, 65535}, {16384, 32768, 65535, 65535}, {40959, 49151, 65535, 65535},
+          {65535, 65535, 65535, 65535}, {40959, 49151, 65535, 65535}, {16384, 32768, 65535, 65535} }
+    }
+};
+
+const WCSData<WPngImage::PixelF> kWCSDataF_1[] =
+{
+    {
+        { WCSF::MappingType::clamp, true, true },
+        { {0, 0, 0, 1}, {0, 0, 0, 1}, {0, 0, 0, 1}, {0.125, 0.25, 0.5, 1}, {0.25, 0.5, 1, 1},
+          {0.625, 0.75, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1} }
+    },
+    {
+        { WCSF::MappingType::cyclic, true, true },
+        { {0.25, 0.5, 1, 1}, {0.625, 0.75, 1, 1}, {0, 0, 0, 1}, {0.125, 0.25, 0.5, 1},
+          {0.25, 0.5, 1, 1}, {0.625, 0.75, 1, 1}, {0, 0, 0, 1}, {0.125, 0.25, 0.5, 1},
+          {0.25, 0.5, 1, 1} }
+    },
+    {
+        { WCSF::MappingType::repeating, true, true },
+        { {0.625, 0.75, 1, 1}, {0.75, 0.75, 0.75, 1}, {0, 0, 0, 1}, {0.1875, 0.375, 0.75, 1},
+          {0.625, 0.75, 1, 1}, {0.75, 0.75, 0.75, 1}, {0, 0, 0, 1}, {0.1875, 0.375, 0.75, 1},
+          {0.625, 0.75, 1, 1} }
+    },
+    {
+        { WCSF::MappingType::mirroring, true, true },
+        { {0.25, 0.5, 1, 1}, {0.125, 0.25, 0.5, 1}, {0, 0, 0, 1}, {0.125, 0.25, 0.5, 1},
+          {0.25, 0.5, 1, 1}, {0.625, 0.75, 1, 1}, {1, 1, 1, 1}, {0.625, 0.75, 1, 1},
+          {0.25, 0.5, 1, 1} }
+    }
+};
+
+template<typename Pixel_t, std::size_t kResultPixelsAmount>
+bool checkWColorSequence(WColorSequence<Pixel_t> sequence,
+                         const Pixel_t (&resultPixels)[kResultPixelsAmount])
+{
+    for(std::size_t i = 0; i < kWCSResultPixelsAmount; ++i)
+    {
+        const double position = kWCSRangeStart + kWCSRangeStep * static_cast<double>(i);
+        const Pixel_t color = sequence.getInterpolatedPixel(position);
+        COMPAREP(color, resultPixels[i]);
+    }
+    return true;
+}
+
+template<typename Pixel_t, std::size_t kEntriesAmount, std::size_t kWCSDataAmount>
+bool testWColorSequence(const typename WColorSequence<Pixel_t>::Entry (&entries)[kEntriesAmount],
+                        const WCSData<Pixel_t> (&wcsData)[kWCSDataAmount])
+{
+    for(const auto& data: wcsData)
+    {
+        for(unsigned makeCopy = 0; makeCopy < 2; ++makeCopy)
+        {
+            WColorSequence<Pixel_t> seq1(entries, data.settings, makeCopy);
+            if(!checkWColorSequence(seq1, data.resultPixels)) ERRORRET;
+
+            WColorSequence<Pixel_t> seq2(&entries[0], kEntriesAmount, data.settings, makeCopy);
+            if(!checkWColorSequence(seq2, data.resultPixels)) ERRORRET;
+
+            std::vector<typename WColorSequence<Pixel_t>::Entry> entriesVector
+                (entries, entries+kEntriesAmount);
+            WColorSequence<Pixel_t> seq3(entriesVector, data.settings, makeCopy);
+            if(!checkWColorSequence(seq3, data.resultPixels)) ERRORRET;
+
+            WColorSequence<Pixel_t> seq4(std::move(entriesVector), data.settings);
+            if(!checkWColorSequence(seq4, data.resultPixels)) ERRORRET;
+
+            std::initializer_list<typename WColorSequence<Pixel_t>::Entry> entriesIL =
+            { entries[0], entries[1], entries[2] };
+            WColorSequence<Pixel_t> seq5(entriesIL, data.settings, makeCopy);
+            if(!checkWColorSequence(seq5, data.resultPixels)) ERRORRET;
+
+            WColorSequence<Pixel_t> seq6;
+            seq6 = seq1;
+            if(!checkWColorSequence(seq6, data.resultPixels)) ERRORRET;
+        }
+
+        WColorSequence<Pixel_t> seq7(entries, entries + kEntriesAmount, data.settings);
+        if(!checkWColorSequence(seq7, data.resultPixels)) ERRORRET;
+    }
+
+    return true;
+}
+
+static bool testWColorSequence()
+{
+    if(!testWColorSequence(kWCS8_1, kWCSData8_1)) ERRORRET;
+    if(!testWColorSequence(kWCS16_1, kWCSData16_1)) ERRORRET;
+    if(!testWColorSequence(kWCSF_1, kWCSDataF_1)) ERRORRET;
+    return true;
+}
+
+
+static bool testUtils()
+{
+    if(!testWColorSequence()) ERRORRET;
+    return true;
+}
+#endif
+
+//============================================================================
 // main()
 //============================================================================
 int main()
@@ -2962,6 +3145,9 @@ int main()
     if(!testTransform()) ERRORRET1;
     if(!testAlphaPremultiply()) ERRORRET1;
     if(!testFlippingAndRotation()) ERRORRET1;
+#if !WPNGIMAGE_RESTRICT_TO_CPP98
+    if(!testUtils()) ERRORRET1;
+#endif
 
     std::remove(kTestPngImageFileName);
     std::cout << "Ok.\n";
