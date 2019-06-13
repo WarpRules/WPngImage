@@ -107,7 +107,7 @@ code
 
 <p>NOTE: Currently this class requires C++11 support. It cannot be compiled in C++98 mode.</p>
 
-<h2>Example</h2>
+<h3>Example</h3>
 
 <pre>const WColorSequence8::Entry entries[] =
 {
@@ -120,9 +120,9 @@ code
 const WColorSequence8::Settings settings;
 settings.mappingType = WColorSequence8::MappingType::cyclic;
 
-WColorSequence8 sequence(entries, settings, false);
+WColorSequence8 sequence(entries, settings, true);
 
-WPngImage::Color8 color = sequence.getInterpolatedPixel(0.125);</pre>
+WPngImage::Pixel8 color = sequence.getInterpolatedPixel(0.125);</pre>
 
 <p>(Note that this is not the only way of initializing the class with color entries.
   Other ways are documented below.)</p>
@@ -149,11 +149,11 @@ using WColorSequenceF = WColorSequence&lt;WPngImage::PixelF&gt;;</pre>
 <pre>struct Entry
 {
     Pixel_t color;
-    Float length; <span class="comment">// Default is 1.0</span>
+    double length; <span class="comment">// Default is 1.0</span>
 
     Entry();
     Entry(Pixel_t c);
-    Entry(Pixel_t c, Float l);
+    Entry(Pixel_t c, double l);
 };</pre>
 
 <p>The <code>length</code> member specifies the distance between this entry and the
@@ -196,11 +196,17 @@ using WColorSequenceF = WColorSequence&lt;WPngImage::PixelF&gt;;</pre>
   value <code>2.5</code> will be interpreted as the end of the sequence (or if the
   <code>repeating</code> mapping type is used, <code>2.75</code>.)</p>
 
+<p>If <code>alphaAwareInterpolation</code> is <code>true</code>, then the colors will be
+  interpolated using the <code>WPngImage</code> pixel <code>interpolate()</code> function
+  (which does alpha-aware interpolation), else the pixel <code>rawInterpolate()</code>
+  function (which ignores alpha when interpolating). This makes a difference only if the
+  colors have different alpha values.</p>
+
 <h2>WColorSequence::MappingType</h2>
 
 <p>This is an enumeration with the following values:</p>
 
-<ul>
+<p><ul>
   <li><code>MappingType::clamp</code>: Positions prior to the first entry will simply return
     the first color. Positions after the last entry will simply return the last color.</li>
   <li><code>MappingType::cyclic</code>: The sequence will immediately jump from the last
@@ -212,7 +218,7 @@ using WColorSequenceF = WColorSequence&lt;WPngImage::PixelF&gt;;</pre>
     last entry.)</li>
   <li><code>MappingType::mirroring</code>: Positions will be interpreted as if going back and
     forth along the sequence.</li>
-</ul>
+</ul></p>
 
 <p>Visualization of all the mapping types:</p>
 
@@ -220,6 +226,119 @@ using WColorSequenceF = WColorSequence&lt;WPngImage::PixelF&gt;;</pre>
 
 <h2>Constructors and initialization</h2>
 
-<p>(TODO)</p>
+<p>The following constructors are provided:</p>
+
+<pre>WColorSequence(); <span class="comment">// 1</span>
+WColorSequence(Settings); <span class="comment">// 2</span>
+WColorSequence(const Entry*, std::size_t amount, Settings, bool makeCopy); <span class="comment">// 3</span>
+WColorSequence(const std::vector&lt;Entry&gt;&amp;, Settings, bool makeCopy); <span class="comment">// 4</span>
+WColorSequence(std::vector&lt;Entry&gt;&amp;&amp;, Settings); <span class="comment">// 5</span>
+WColorSequence(std::initializer_list&lt;Entry&gt;, Settings, bool makeCopy); <span class="comment">// 6</span>
+
+template&lt;std::size_t kArraySize&gt;
+WColorSequence(const Entry(&amp;)[kArraySize], Settings, bool makeCopy); <span class="comment">// 7</span>
+
+template&lt;typename InputIterator&gt;
+WColorSequence(InputIterator b, InputIterator e, Settings); <span class="comment">// 8</span></pre>
+
+<p>For the meaning of the <code>makeCopy</code> parameter, consult the next subsection.</p>
+
+<p><ol>
+    <li>Default constructor. The object will be empty until initialized with a call to an
+      <code>initialize()</code> function. A call to <code>getInterpolatedPixel()</code> will
+      simply return a default-initialized pixel.</li>
+    <li>Construct with a <code>Settings</code> object only. This object will be empty until
+      initialized with a call to an <code>initialize()</code> function.</li>
+    <li>Construct with a pointer to an array of entries, and an amount.</li>
+    <li>Construct with a vector of entries.</li>
+    <li>Construct with an rvalue to a vector of entries. The contents will be moved from the
+      parameter into this object. (The <code>makeCopy</code> parameter is superfluous in
+      this case, and thus omitted. It behaves as if it were specified as <code>true</code>.)</li>
+    <li>Construct with an initializer list of entries.</li>
+    <li>Construct with an array of entries.</li>
+    <li>Construct with an iterator range. The iterators must dereference to an object of
+      type <code>Entry</code>. The entries will be copied into this object.</li>
+</ol></p>
+
+<p>An existing object can be re-initialized with an equivalent <code>initialize()</code> call:</p>
+
+<pre>void initialize(const Entry*, std::size_t amount, bool makeCopy);
+void initialize(const std::vector&lt;Entry&gt;&amp;, bool makeCopy);
+void initialize(std::vector&lt;Entry&gt;&amp;&amp;);
+void initialize(std::initializer_list&lt;Entry&gt;, bool makeCopy);
+
+template&lt;std::size_t kArraySize&gt;
+void initialize(const Entry(&amp;)[kArraySize], bool makeCopy);
+
+template&lt;typename InputIterator&gt;
+void initialize(InputIterator b, InputIterator e);</pre>
+
+<p>The settings can be set or changed with:</p>
+
+<pre>void setSettings(Settings);</pre>
+
+<h3>Owning vs. non-owning initialization</h3>
+
+<p>The <code>makeCopy</code> parameter to the constructors and the <code>initialize()</code>
+  functions determine whether this object will make an internal copy of the entries, or simply
+  reference the existing ones (by simply storing a pointer to the original data)</p>
+
+<p>If <code>makeCopy</code> is <code>true</code>, then the entries will copied into this object,
+  and thus it will be independent of anything else.</p>
+
+<p>If <code>makeCopy</code> is <code>false</code>, then this object will simply reference the
+  original array of entries. This means that the original data must exist for as long as this
+  object is using it. This can be used for efficiency, if the original data will overlive this
+  object, and there's no need to make a useless copy of the data.</p>
+
+<p>This object will never change the original data, only read it.</p>
+
+<p>Note that if this object is non-owning, the colors in the original data can be changed by
+  the calling code between calls to <code>getInterpolatedPixel()</code>, but the
+  <code>length</code> values must not. If the calling code wants to change any of the
+  <code>length</code> values, it should re-initialize this object with a new call to
+  the appropriate <code>initialize()</code> function.</p>
+
+<h2>Data getters</h2>
+
+<p>The current data that this object has been initialized with can be retrieved with
+  the following functions:</p>
+
+<pre>bool isNonOwning() const;
+const Entry* entriesPtr() const;
+std::size_t entriesAmount() const;
+Settings currentSettings() const;</pre>
+
+<p>If this object has not been initialized with any entries, <code>entriesPtr()</code> will
+  return <code>nullptr</code> and <code>entriesAmount()</code> will return <code>0</code>.</p>
+
+<h2>Getting interpolated colors</h2>
+
+<p>The main color retrieval function is:</p>
+
+<pre>Pixel_t getInterpolatedPixel(double position) const;</pre>
+
+<p>The beginning of the color sequence always starts at position <code>0.0</code>.</p>
+
+<p>The position that corresponds to the end of the color sequence depends on the value
+  of <code>normalizedMapping</code> in the specified <code>Settings</code>.</p>
+
+<p>If <code>normalizedMapping</code> is <code>true</code>, then the end of the color
+  sequence will be at position <code>1.0</code>. In other words, the color sequence will effectively
+  be scaled so that it will span the length range from <code>0.0</code> to <code>1.0</code>.</p>
+
+<p>If <code>normalizedMapping</code> is <code>false</code>, then the end depends on the total
+  sum of <code>length</code> values in the entries:</p>
+
+<p><ul>
+    <li>For <code>MappingType::repeating</code> it will be the sum of all the lengths of all
+      the entries.</li>
+    <li>For all the other mapping types, it will be the sum of all the lengths of all the
+      entries except the last one (since the length of the last entry is ignored in these
+      mapping types.</li>
+</ul></p>
+
+<p>The <code>position</code> parameter can perfectly well go outside this range. The behavior
+  is determined by the mapping type, as described earlier in this documentation.</p>
 
 </body></html>
