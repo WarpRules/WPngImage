@@ -30,8 +30,8 @@
 #define WPNGIMAGE_CONSTEXPR
 #endif
 
-#define WPNGIMAGE_VERSION 0x010400
-#define WPNGIMAGE_VERSION_STRING "1.4.0"
+#define WPNGIMAGE_VERSION 0x010401
+#define WPNGIMAGE_VERSION_STRING "1.4.1"
 #define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2018 Juha Nieminen"
 
 
@@ -278,6 +278,11 @@ class WPngImage
     void rotate180();
     void rotate90cw();
     void rotate90ccw();
+
+    void translate(int xOffset, int yOffset);
+    void translate(int xOffset, int yOffset, Pixel8);
+    void translate(int xOffset, int yOffset, Pixel16);
+    void translate(int xOffset, int yOffset, PixelF);
 
 
     //------------------------------------------------------------------------

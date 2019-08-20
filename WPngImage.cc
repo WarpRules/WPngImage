@@ -1372,6 +1372,10 @@ struct WPngImage::PngDataBase
     virtual void rotate90cwNonsquare(int, int) = 0;
     virtual void rotate90ccwSquare(int) = 0;
     virtual void rotate90ccwNonsquare(int, int) = 0;
+    virtual void translate(int, int, int, int) = 0;
+    virtual void translate(int, int, int, int, Pixel8) = 0;
+    virtual void translate(int, int, int, int, Pixel16) = 0;
+    virtual void translate(int, int, int, int, PixelF) = 0;
 };
 
 WPngImage::PngDataBase::PngDataBase(PixelFormat pixelFormat):
@@ -1431,6 +1435,11 @@ struct WPngImage::PngData: public PngDataBase
     virtual void rotate90cwNonsquare(int, int);
     virtual void rotate90ccwSquare(int);
     virtual void rotate90ccwNonsquare(int, int);
+    virtual void translate(int, int, int, int);
+    virtual void translate(int, int, int, int, Pixel8);
+    virtual void translate(int, int, int, int, Pixel16);
+    virtual void translate(int, int, int, int, PixelF);
+    void fillSidesAfterTranslate(int, int, int, int, PixelData_t);
 };
 
 
@@ -1574,24 +1583,21 @@ void WPngImage::PngData<PixelData_t>::drawPixel(std::size_t index, const PixelF&
 }
 
 template<typename PixelData_t>
-void WPngImage::PngData<PixelData_t>::fill(const Pixel8& pixel)
+void WPngImage::PngData<PixelData_t>::fill(const Pixel8& srcPixel)
 {
-    for(std::size_t i = 0; i < mPixelData.size(); ++i)
-        assignPixel(mPixelData[i], pixel);
+    mPixelData.assign(mPixelData.size(), PixelData_t(srcPixel));
 }
 
 template<typename PixelData_t>
-void WPngImage::PngData<PixelData_t>::fill(const Pixel16& pixel)
+void WPngImage::PngData<PixelData_t>::fill(const Pixel16& srcPixel)
 {
-    for(std::size_t i = 0; i < mPixelData.size(); ++i)
-        assignPixel(mPixelData[i], pixel);
+    mPixelData.assign(mPixelData.size(), PixelData_t(srcPixel));
 }
 
 template<typename PixelData_t>
-void WPngImage::PngData<PixelData_t>::fill(const PixelF& pixel)
+void WPngImage::PngData<PixelData_t>::fill(const PixelF& srcPixel)
 {
-    for(std::size_t i = 0; i < mPixelData.size(); ++i)
-        assignPixel(mPixelData[i], pixel);
+    mPixelData.assign(mPixelData.size(), PixelData_t(srcPixel));
 }
 
 template<typename PixelData_t>
@@ -1880,6 +1886,122 @@ void WPngImage::PngData<PixelData_t>::rotate90ccwNonsquare(int width, int height
             newPixelData.push_back(*data);
 
     mPixelData.swap(newPixelData);
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::translate
+(int imageWidth, int imageHeight, int xOffset, int yOffset)
+{
+    if(xOffset == 0 && yOffset == 0)
+        return;
+
+    const int absXOffset = std::abs(xOffset), absYOffset = std::abs(yOffset);
+    if(absXOffset >= imageWidth || absYOffset >= imageHeight)
+        return;
+
+    const int areaWidth = imageWidth - absXOffset, areaHeight = imageHeight - absYOffset;
+
+    if(xOffset <= 0)
+    {
+        if(yOffset <= 0)
+        {
+            PixelData_t *destPtr = &mPixelData[0];
+            const PixelData_t *srcPtr = &mPixelData[absYOffset*imageWidth + absXOffset];
+            for(int yInd = 0; yInd < areaHeight; ++yInd, destPtr += imageWidth, srcPtr += imageWidth)
+                for(int xInd = 0; xInd < areaWidth; ++xInd)
+                    destPtr[xInd] = srcPtr[xInd];
+        }
+        else // yOffset > 0
+        {
+            PixelData_t *destPtr = &mPixelData[mPixelData.size() - imageWidth];
+            const PixelData_t *srcPtr = &mPixelData[(imageHeight-1-absYOffset)*imageWidth + absXOffset];
+            for(int yInd = 0; yInd < areaHeight; ++yInd, destPtr -= imageWidth, srcPtr -= imageWidth)
+                for(int xInd = 0; xInd < areaWidth; ++xInd)
+                    destPtr[xInd] = srcPtr[xInd];
+        }
+    }
+    else // xOffset > 0
+    {
+        if(yOffset <= 0)
+        {
+            PixelData_t *destPtr = &mPixelData[imageWidth-areaWidth];
+            const PixelData_t *srcPtr = &mPixelData[absYOffset*imageWidth + (imageWidth-areaWidth-absXOffset)];
+            for(int yInd = 0; yInd < areaHeight; ++yInd, destPtr += imageWidth, srcPtr += imageWidth)
+                for(int xInd = areaWidth-1; xInd >= 0; --xInd)
+                    destPtr[xInd] = srcPtr[xInd];
+        }
+        else // yOffset > 0
+        {
+            PixelData_t *destPtr = &mPixelData[mPixelData.size() - areaWidth];
+            const PixelData_t *srcPtr = &mPixelData[(imageHeight-1-absYOffset)*imageWidth +
+                                                    (imageWidth-areaWidth-absXOffset)];
+            for(int yInd = 0; yInd < areaHeight; ++yInd, destPtr -= imageWidth, srcPtr -= imageWidth)
+                for(int xInd = areaWidth-1; xInd >= 0; --xInd)
+                    destPtr[xInd] = srcPtr[xInd];
+        }
+    }
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::fillSidesAfterTranslate
+(int imageWidth, int imageHeight, int xOffset, int yOffset, PixelData_t pixel)
+{
+    if(xOffset == 0 && yOffset == 0)
+        return;
+
+    const int absXOffset = std::abs(xOffset), absYOffset = std::abs(yOffset);
+    if(absXOffset >= imageWidth || absYOffset >= imageHeight)
+    {
+        mPixelData.assign(mPixelData.size(), pixel);
+        return;
+    }
+
+    const int areaHeight = imageHeight - absYOffset;
+    int yBegin, yEnd, xBegin, xEnd;
+
+    if(yOffset >= 0) { yBegin = 0; yEnd = absYOffset; }
+    else { yBegin = imageHeight - absYOffset; yEnd = imageHeight; }
+    if(xOffset >= 0) { xBegin = 0; xEnd = absXOffset; }
+    else { xBegin = imageWidth - absXOffset; xEnd = imageWidth; }
+    const int xDiff = xEnd - xBegin;
+
+    PixelData_t *dest = &mPixelData[yBegin*imageWidth];
+    for(int yInd = yBegin; yInd < yEnd; ++yInd, dest += imageWidth)
+        for(int xInd = 0; xInd < imageWidth; ++xInd)
+            dest[xInd] = pixel;
+
+    if(yOffset >= 0)
+        dest = &mPixelData[yEnd*imageWidth + xBegin];
+    else
+        dest = &mPixelData[xBegin];
+
+    for(int yInd = 0; yInd < areaHeight; ++yInd, dest += imageWidth)
+        for(int xInd = 0; xInd < xDiff; ++xInd)
+            dest[xInd] = pixel;
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::translate
+(int imageWidth, int imageHeight, int xOffset, int yOffset, Pixel8 pixel)
+{
+    translate(imageWidth, imageHeight, xOffset, yOffset);
+    fillSidesAfterTranslate(imageWidth, imageHeight, xOffset, yOffset, PixelData_t(pixel));
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::translate
+(int imageWidth, int imageHeight, int xOffset, int yOffset, Pixel16 pixel)
+{
+    translate(imageWidth, imageHeight, xOffset, yOffset);
+    fillSidesAfterTranslate(imageWidth, imageHeight, xOffset, yOffset, PixelData_t(pixel));
+}
+
+template<typename PixelData_t>
+void WPngImage::PngData<PixelData_t>::translate
+(int imageWidth, int imageHeight, int xOffset, int yOffset, PixelF pixel)
+{
+    translate(imageWidth, imageHeight, xOffset, yOffset);
+    fillSidesAfterTranslate(imageWidth, imageHeight, xOffset, yOffset, PixelData_t(pixel));
 }
 
 
@@ -2288,6 +2410,26 @@ void WPngImage::rotate90ccw()
             std::swap(mWidth, mHeight);
         }
     }
+}
+
+void WPngImage::translate(int xOffset, int yOffset)
+{
+    if(mData) mData->translate(mWidth, mHeight, xOffset, yOffset);
+}
+
+void WPngImage::translate(int xOffset, int yOffset, Pixel8 pixel)
+{
+    if(mData) mData->translate(mWidth, mHeight, xOffset, yOffset, pixel);
+}
+
+void WPngImage::translate(int xOffset, int yOffset, Pixel16 pixel)
+{
+    if(mData) mData->translate(mWidth, mHeight, xOffset, yOffset, pixel);
+}
+
+void WPngImage::translate(int xOffset, int yOffset, PixelF pixel)
+{
+    if(mData) mData->translate(mWidth, mHeight, xOffset, yOffset, pixel);
 }
 
 

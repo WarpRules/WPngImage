@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage 1.4.0 documentation</title>
+  <title>WPngImage 1.4.1 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -79,7 +79,7 @@ code
 </head>
 
 <body>
-<h1>WPngImage 1.4.0 documentation</h1>
+<h1>WPngImage 1.4.1 documentation</h1>
 
 <p><code>WPngImage</code> is a C++ library to manage images in PNG format. It can be used
   as a completely stand-alone library using the <a href="http://lodev.org/lodepng/">lodepng</a>
@@ -150,6 +150,7 @@ code
     <li><a href="#wpngimage_drawing_rectangles">Drawing rectangles</a></li>
     <li><a href="#wpngimage_resize_canvas">Resize canvas</a></li>
     <li><a href="#wpngimage_flip_rotate">Flipping and rotating the image</a></li>
+    <li><a href="#wpngimage_translate">Translating the image</a></li>
     <li><a href="#wpngimage_premultiply_alpha">Premultiply alpha</a></li>
     <li><a href="#wpngimage_lowlevel">Low level access</a></li>
   </ul>
@@ -162,6 +163,7 @@ code
     <li><a href="#pixel_other">Other operations</a></li>
     <li><a href="#pixel_constexpr">constexpr expressions</a></li>
   </ul>
+  <li><a href="#utility_libraries">Utility libraries</a></li>
 </ul>
 
 <!---------------------------------------------------------------------------->
@@ -1139,6 +1141,29 @@ void rotate90ccw();</pre>
 
 
 <!---------------------------------------------------------------------------->
+<h3 id="wpngimage_translate">Translating the image</h3>
+
+<pre>void translate(int xOffset, int yOffset);
+void translate(int xOffset, int yOffset, Pixel8);
+void translate(int xOffset, int yOffset, Pixel16);
+void translate(int xOffset, int yOffset, PixelF);</pre>
+
+<p>These functions will translate the image by a given amount. (<code>xOffset</code> and
+  <code>yOffset</code> can be positive, negative or zero.) The pixels that end up outside
+  the image are simply discarded.</p>
+
+<p>The first version will leave the pixels in the empty space left by the translation
+  unmodified (in other words, they will still contain the original pixels). The versions
+  taking a pixel will fill this new empty space with that given pixel color.</p>
+
+<p>(If both <code>xOffset</code> and <code>yOffset</code> are zero, nothing is done.
+  If either one is larger than the corresponding image dimension, ie. the image will
+  be effectively translated completely outside the image area, the first function will
+  do nothing, and the other functions will effectively just fill the image with the
+  given pixel color.)</p>
+
+
+<!---------------------------------------------------------------------------->
 <h3 id="wpngimage_premultiply_alpha">Premultiply alpha</h3>
 
 <pre>void premultiplyAlpha();</pre>
@@ -1492,5 +1517,16 @@ static_assert(p1 != p2, "Error");</pre>
 
 <p>The other member functions of the pixel classes are not <code>constexpr</code> for
   practical reasons, and thus not usable in <code>constexpr</code> expressions.</p>
+
+
+<!---------------------------------------------------------------------------->
+<h2 id="utility_libraries">Utility libraries</h2>
+
+<p>The <code>utils</code> subdirectory contains separate utility libraries for use with WPngImage. Each
+  has its own separate documentation inside that directory (linked here).</p>
+
+<ul>
+  <li><a href="utils/WColorSequence.html">WColorSequence</a>: A library for creating interpolated color sequences.</li>
+</ul>
 
 </body></html>

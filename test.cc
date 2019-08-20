@@ -131,6 +131,39 @@ COMPFUNC(CMYK, c, m, y, k)
 #define ERRORRET do { std::cout << "Called from line " << __LINE__ << "\n"; return false; } while(0)
 #define ERRORRET1 do { std::cout << "Called from line " << __LINE__ << "\n"; return 1; } while(0)
 
+template<typename Pixel_t> static Pixel_t getPixel(const WPngImage&, int, int);
+template<> WPngImage::Pixel8 getPixel(const WPngImage& image, int x, int y) { return image.get8(x, y); }
+template<> WPngImage::Pixel16 getPixel(const WPngImage& image, int x, int y) { return image.get16(x, y); }
+template<> WPngImage::PixelF getPixel(const WPngImage& image, int x, int y) { return image.getF(x, y); }
+
+template<typename Pixel_t>
+static bool compareImages(int line, const WPngImage& image1, const WPngImage& image2)
+{
+    if(image1.width() != image2.width() || image1.height() != image2.height())
+    {
+        std::cout << "At line " << line << ": Image dimensions do not match: ("
+                  << image1.width() << "x" << image1.height() << ") vs. ("
+                  << image2.width() << "x" << image2.height() << ").\n";
+        return false;
+    }
+
+    for(int yInd = 0; yInd < image1.height(); ++yInd)
+    {
+        for(int xInd = 0; xInd < image1.width(); ++xInd)
+        {
+            if(!compare(line, getPixel<Pixel_t>(image1, xInd, yInd), getPixel<Pixel_t>(image2, xInd, yInd)))
+            {
+                std::cout << "at image coordinates (" << xInd << ", " << yInd << ")\n";
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+#define COMPAREIMAGES(Pixel_t, image1, image2) if(!compareImages<Pixel_t>(__LINE__, image1, image2)) return false
+
 
 //============================================================================
 // Test basic pixel construction
@@ -2882,6 +2915,213 @@ static bool testFlippingAndRotation()
 
 
 //============================================================================
+// Test translate
+//============================================================================
+template<typename Pixel_t>
+static void setupImage(WPngImage& image, std::initializer_list<Pixel_t> pixels)
+{
+    for(int y = 0, counter = 0; y < image.height(); ++y)
+        for(int x = 0; x < image.width(); ++x, ++counter)
+            image.set(x, y, pixels.begin()[counter]);
+}
+
+template<typename Pixel_t>
+static void setupImage(WPngImage& image, int width, int height, std::initializer_list<Pixel_t> pixels)
+{
+    image.newImage(width, height, Pixel_t(0, 0, 0, 0));
+    setupImage(image, pixels);
+}
+
+template<typename Pixel_t>
+static bool translateAndTest(const WPngImage& srcImage, WPngImage& resImage, int xOffset, int yOffset,
+                             std::initializer_list<Pixel_t> pixels)
+{
+    setupImage(resImage, pixels);
+    WPngImage testImage = srcImage;
+    testImage.translate(xOffset, yOffset);
+    COMPAREIMAGES(Pixel_t, testImage, resImage);
+
+    const Pixel_t fillPixel(1, 1, 1);
+    int xBegin, xEnd, yBegin, yEnd;
+    if(yOffset >= 0) { yBegin = 0; yEnd = yOffset; }
+    else { yBegin = srcImage.height() + yOffset; yEnd = srcImage.height(); }
+    if(xOffset >= 0) { xBegin = 0; xEnd = xOffset; }
+    else { xBegin = srcImage.width() + xOffset; xEnd = srcImage.width(); }
+
+    for(int y = yBegin; y < yEnd; ++y)
+        for(int x = 0; x < srcImage.width(); ++x)
+            resImage.set(x, y, fillPixel);
+
+    if(yOffset >= 0)
+        for(int y = yEnd; y < srcImage.height(); ++y)
+            for(int x = xBegin; x < xEnd; ++x)
+                resImage.set(x, y, fillPixel);
+    else
+        for(int y = 0; y < yBegin; ++y)
+            for(int x = xBegin; x < xEnd; ++x)
+                resImage.set(x, y, fillPixel);
+
+    testImage = srcImage;
+    testImage.translate(xOffset, yOffset, fillPixel);
+    COMPAREIMAGES(Pixel_t, testImage, resImage);
+
+    return true;
+}
+
+template<typename Pixel_t>
+static bool runTestTranslate()
+{
+    WPngImage srcImage(1, 1, Pixel_t(1, 2, 3));
+    WPngImage resImage(1, 1, Pixel_t(2, 3, 4));
+    WPngImage testImage;
+
+    for(int yOffset = -3; yOffset <= 3; ++yOffset)
+    {
+        for(int xOffset = -3; xOffset <= 3; ++xOffset)
+        {
+            testImage = srcImage;
+            testImage.translate(xOffset, yOffset);
+            COMPAREIMAGES(Pixel_t, testImage, srcImage);
+            testImage.translate(xOffset, yOffset, Pixel_t(2, 3, 4));
+            if(xOffset == 0 && yOffset == 0)
+            { COMPAREIMAGES(Pixel_t, testImage, srcImage); }
+            else
+            { COMPAREIMAGES(Pixel_t, testImage, resImage); }
+        }
+    }
+
+    setupImage<Pixel_t>(srcImage, 3, 2, { { 1, 2, 3 }, { 2, 3, 4 }, { 3, 4, 5 },
+                                          { 4, 5, 6 }, { 5, 6, 7 }, { 6, 7, 8 } });
+    testImage = srcImage;
+    testImage.translate(0, 0);
+    COMPAREIMAGES(Pixel_t, testImage, srcImage);
+    testImage.translate(-3, 0);
+    COMPAREIMAGES(Pixel_t, testImage, srcImage);
+    testImage.translate(3, 0);
+    COMPAREIMAGES(Pixel_t, testImage, srcImage);
+    testImage.translate(0, 2);
+    COMPAREIMAGES(Pixel_t, testImage, srcImage);
+    testImage.translate(0, -2);
+    COMPAREIMAGES(Pixel_t, testImage, srcImage);
+    testImage.translate(1, 2);
+    COMPAREIMAGES(Pixel_t, testImage, srcImage);
+    testImage.translate(-1, 2);
+    COMPAREIMAGES(Pixel_t, testImage, srcImage);
+
+    resImage.newImage(3, 2, Pixel_t());
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, -1, 0,
+                                  { { 2, 3, 4 }, { 3, 4, 5 }, { 3, 4, 5 },
+                                    { 5, 6, 7 }, { 6, 7, 8 }, { 6, 7, 8 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, -2, 0,
+                                  { { 3, 4, 5 }, { 2, 3, 4 }, { 3, 4, 5 },
+                                    { 6, 7, 8 }, { 5, 6, 7 }, { 6, 7, 8 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, 1, 0,
+                                  { { 1, 2, 3 }, { 1, 2, 3 }, { 2, 3, 4 },
+                                    { 4, 5, 6 }, { 4, 5, 6 }, { 5, 6, 7 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, 2, 0,
+                                  { { 1, 2, 3 }, { 2, 3, 4 }, { 1, 2, 3 },
+                                    { 4, 5, 6 }, { 5, 6, 7 }, { 4, 5, 6 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, 0, 1,
+                                  { { 1, 2, 3 }, { 2, 3, 4 }, { 3, 4, 5 },
+                                    { 1, 2, 3 }, { 2, 3, 4 }, { 3, 4, 5 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, 0, -1,
+                                  { { 4, 5, 6 }, { 5, 6, 7 }, { 6, 7, 8 },
+                                    { 4, 5, 6 }, { 5, 6, 7 }, { 6, 7, 8 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, 1, 1,
+                                  { { 1, 2, 3 }, { 2, 3, 4 }, { 3, 4, 5 },
+                                    { 4, 5, 6 }, { 1, 2, 3 }, { 2, 3, 4 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, 2, 1,
+                                  { { 1, 2, 3 }, { 2, 3, 4 }, { 3, 4, 5 },
+                                    { 4, 5, 6 }, { 5, 6, 7 }, { 1, 2, 3 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, -1, 1,
+                                  { { 1, 2, 3 }, { 2, 3, 4 }, { 3, 4, 5 },
+                                    { 2, 3, 4 }, { 3, 4, 5 }, { 6, 7, 8 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, -2, 1,
+                                  { { 1, 2, 3 }, { 2, 3, 4 }, { 3, 4, 5 },
+                                    { 3, 4, 5 }, { 5, 6, 7 }, { 6, 7, 8 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, 1, -1,
+                                  { { 1, 2, 3 }, { 4, 5, 6 }, { 5, 6, 7 },
+                                    { 4, 5, 6 }, { 5, 6, 7 }, { 6, 7, 8 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, 2, -1,
+                                  { { 1, 2, 3 }, { 2, 3, 4 }, { 4, 5, 6 },
+                                    { 4, 5, 6 }, { 5, 6, 7 }, { 6, 7, 8 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, -1, -1,
+                                  { { 5, 6, 7 }, { 6, 7, 8 }, { 3, 4, 5 },
+                                    { 4, 5, 6 }, { 5, 6, 7 }, { 6, 7, 8 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, -2, -1,
+                                  { { 6, 7, 8 }, { 2, 3, 4 }, { 3, 4, 5 },
+                                    { 4, 5, 6 }, { 5, 6, 7 }, { 6, 7, 8 } })) ERRORRET;
+
+    setupImage<Pixel_t>(srcImage, 4, 4, { { 1, 2, 3 }, { 2, 3, 4 }, { 3, 4, 5 }, { 4, 5, 6 },
+                                          { 5, 6, 7 }, { 6, 7, 8 }, { 7, 8, 9 }, { 8, 9, 10 },
+                                          { 9, 10, 11 }, { 10, 11, 12 }, { 11, 12, 13 }, { 12, 13, 14 },
+                                          { 13, 14, 15 }, { 14, 15, 16 }, { 15, 16, 17 }, { 16, 17, 18 } });
+    resImage.newImage(4, 4, Pixel_t());
+
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, 1, 2,
+                                  { { 1, 2, 3 }, { 2, 3, 4 }, { 3, 4, 5 }, { 4, 5, 6 },
+                                    { 5, 6, 7 }, { 6, 7, 8 }, { 7, 8, 9 }, { 8, 9, 10 },
+                                    { 9, 10, 11 }, { 1, 2, 3 }, { 2, 3, 4 }, { 3, 4, 5 },
+                                    { 13, 14, 15 }, { 5, 6, 7 }, { 6, 7, 8 }, { 7, 8, 9 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, 2, 2,
+                                  { { 1, 2, 3 }, { 2, 3, 4 }, { 3, 4, 5 }, { 4, 5, 6 },
+                                    { 5, 6, 7 }, { 6, 7, 8 }, { 7, 8, 9 }, { 8, 9, 10 },
+                                    { 9, 10, 11 }, { 10, 11, 12 }, { 1, 2, 3 }, { 2, 3, 4 },
+                                    { 13, 14, 15 }, { 14, 15, 16 }, { 5, 6, 7 }, { 6, 7, 8 } })) ERRORRET;
+    if(!translateAndTest<Pixel_t>(srcImage, resImage, -2, -2,
+                                  { { 11, 12, 13 }, { 12, 13, 14 }, { 3, 4, 5 }, { 4, 5, 6 },
+                                    { 15, 16, 17 }, { 16, 17, 18 }, { 7, 8, 9 }, { 8, 9, 10 },
+                                    { 9, 10, 11 }, { 10, 11, 12 }, { 11, 12, 13 }, { 12, 13, 14 },
+                                    { 13, 14, 15 }, { 14, 15, 16 }, { 15, 16, 17 }, { 16, 17, 18 } })) ERRORRET;
+
+    const Pixel_t pixel1(1, 2, 3), pixel2(4, 4, 5);
+    srcImage.newImage(100, 200, pixel1);
+    resImage = srcImage;
+    resImage.putRect(0, 0, 25, 200, pixel2, true);
+    testImage = srcImage;
+    testImage.translate(25, 0);
+    COMPAREIMAGES(Pixel_t, testImage, srcImage);
+    testImage.translate(25, 0, pixel2);
+    COMPAREIMAGES(Pixel_t, testImage, resImage);
+
+    resImage = srcImage;
+    resImage.putRect(25, 0, 75, 200, pixel2, true);
+    testImage = srcImage;
+    testImage.translate(-75, 0, pixel2);
+    COMPAREIMAGES(Pixel_t, testImage, resImage);
+
+    resImage = srcImage;
+    resImage.putRect(0, 0, 100, 80, pixel2, true);
+    testImage = srcImage;
+    testImage.translate(0, 80, pixel2);
+    COMPAREIMAGES(Pixel_t, testImage, resImage);
+
+    resImage = srcImage;
+    resImage.putRect(0, 80, 100, 120, pixel2, true);
+    testImage = srcImage;
+    testImage.translate(0, -120, pixel2);
+    COMPAREIMAGES(Pixel_t, testImage, resImage);
+
+    resImage = srcImage;
+    resImage.putRect(0, 0, 100, 20, pixel2, true);
+    resImage.putRect(70, 20, 30, 180, pixel2, true);
+    testImage = srcImage;
+    testImage.translate(-30, 20, pixel2);
+    COMPAREIMAGES(Pixel_t, testImage, resImage);
+
+    return true;
+}
+
+static bool testTranslate()
+{
+    if(!runTestTranslate<WPngImage::Pixel8>()) ERRORRET;
+    if(!runTestTranslate<WPngImage::Pixel16>()) ERRORRET;
+    if(!runTestTranslate<WPngImage::PixelF>()) ERRORRET;
+    return true;
+}
+
+
+//============================================================================
 // Test constexprness
 //============================================================================
 #if !WPNGIMAGE_RESTRICT_TO_CPP98
@@ -3145,6 +3385,7 @@ int main()
     if(!testTransform()) ERRORRET1;
     if(!testAlphaPremultiply()) ERRORRET1;
     if(!testFlippingAndRotation()) ERRORRET1;
+    if(!testTranslate()) ERRORRET1;
 #if !WPNGIMAGE_RESTRICT_TO_CPP98
     if(!testUtils()) ERRORRET1;
 #endif
