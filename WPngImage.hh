@@ -8,6 +8,10 @@
 #define WPNGIMAGE_RESTRICT_TO_CPP98 0
 #endif
 
+#ifndef WPNGIMAGE_DISABLE_PNG_FILE_IO_SUPPORT
+#define WPNGIMAGE_DISABLE_PNG_FILE_IO_SUPPORT 0
+#endif
+
 #ifndef WPNGIMAGE_INCLUDE_GUARD
 #define WPNGIMAGE_INCLUDE_GUARD
 
@@ -30,9 +34,9 @@
 #define WPNGIMAGE_CONSTEXPR
 #endif
 
-#define WPNGIMAGE_VERSION 0x010401
-#define WPNGIMAGE_VERSION_STRING "1.4.1"
-#define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2018 Juha Nieminen"
+#define WPNGIMAGE_VERSION 0x010402
+#define WPNGIMAGE_VERSION_STRING "1.4.2"
+#define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2019 Juha Nieminen"
 
 
 //============================================================================
@@ -144,6 +148,7 @@ class WPngImage
     //------------------------------------------------------------------------
     // Image loading and creation
     //------------------------------------------------------------------------
+#if !WPNGIMAGE_DISABLE_PNG_FILE_IO_SUPPORT
     enum IOStatusValue
     {
         kIOStatus_Ok,
@@ -178,6 +183,7 @@ class WPngImage
     IOStatus loadImageFromRAM(const void* pngData, std::size_t pngDataSize,
                               PngReadConvert = kPngReadConvert_closestMatch);
     IOStatus loadImageFromRAM(const void* pngData, std::size_t pngDataSize, PixelFormat);
+#endif
 
     void newImage(int width, int height, PixelFormat = kPixelFormat_RGBA8);
     void newImage(int width, int height, Pixel8, PixelFormat = kPixelFormat_RGBA8);
@@ -188,6 +194,7 @@ class WPngImage
     //------------------------------------------------------------------------
     // Image writing
     //------------------------------------------------------------------------
+#if !WPNGIMAGE_DISABLE_PNG_FILE_IO_SUPPORT
     IOStatus saveImage(const char* fileName,
                        PngWriteConvert = kPngWriteConvert_closestMatch) const;
     IOStatus saveImage(const char* fileName, PngFileFormat) const;
@@ -208,6 +215,7 @@ class WPngImage
     IOStatus saveImageToRAM(ByteStreamOutputFunc,
                             PngWriteConvert = kPngWriteConvert_closestMatch) const;
     IOStatus saveImageToRAM(ByteStreamOutputFunc, PngFileFormat) const;
+#endif
 
 
     //------------------------------------------------------------------------
@@ -365,6 +373,8 @@ class WPngImage
     static PngFileFormat getFileFormat(PngWriteConvert, PngFileFormat, PixelFormat);
     void setPixel(std::size_t, const Pixel8&);
     void setPixel(std::size_t, const Pixel16&);
+
+#if !WPNGIMAGE_DISABLE_PNG_FILE_IO_SUPPORT
     void setPixelRow(PngFileFormat, int, Byte*, int) const;
     void setPixelRow(PngFileFormat, int, UInt16*, int) const;
 
@@ -377,6 +387,7 @@ class WPngImage
     IOStatus performSaveImage(const char*, PngFileFormat) const;
     IOStatus performSaveImageToRAM
     (std::vector<unsigned char>*, ByteStreamOutputFunc, PngFileFormat) const;
+#endif
 };
 
 

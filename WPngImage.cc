@@ -2185,6 +2185,28 @@ WPngImage::PngFileFormat WPngImage::originalFileFormat() const
     return mData ? mData->mPngFileFormat : kPngFileFormat_none;
 }
 
+WPngImage::PngFileFormat WPngImage::getClosestMatchFileFormat(PixelFormat pixelFormat)
+{
+    switch(pixelFormat)
+    {
+      case WPngImage::kPixelFormat_GA8: return WPngImage::kPngFileFormat_GA8;
+      case WPngImage::kPixelFormat_GA16:
+      case WPngImage::kPixelFormat_GAF: return WPngImage::kPngFileFormat_GA16;
+      case WPngImage::kPixelFormat_RGBA8: return WPngImage::kPngFileFormat_RGBA8;
+      case WPngImage::kPixelFormat_RGBA16:
+      case WPngImage::kPixelFormat_RGBAF: return WPngImage::kPngFileFormat_RGBA16;
+    }
+    return WPngImage::kPngFileFormat_RGBA8;
+}
+
+WPngImage::PngFileFormat WPngImage::getFileFormat
+(PngWriteConvert conversion, PngFileFormat originalFileFormat, PixelFormat currentPixelFormat)
+{
+    if(conversion == WPngImage::kPngWriteConvert_closestMatch)
+        return getClosestMatchFileFormat(currentPixelFormat);
+    return originalFileFormat;
+}
+
 void WPngImage::setFileFormat(PngFileFormat newFormat)
 {
     if(mData) mData->mPngFileFormat = newFormat;
@@ -2192,8 +2214,7 @@ void WPngImage::setFileFormat(PngFileFormat newFormat)
 
 void WPngImage::setFileFormat(PngWriteConvert conversion)
 {
-    if(mData) mData->mPngFileFormat =
-                  getFileFormat(conversion, mData->mPngFileFormat, currentPixelFormat());
+    if(mData) mData->mPngFileFormat = getFileFormat(conversion, mData->mPngFileFormat, currentPixelFormat());
 }
 
 bool WPngImage::isGrayscalePixelFormat() const
@@ -2231,6 +2252,11 @@ bool WPngImage::isFloatPixelFormat() const
     const PixelFormat pixelFormat = currentPixelFormat();
     return (pixelFormat == kPixelFormat_RGBAF ||
             pixelFormat == kPixelFormat_GAF);
+}
+
+bool WPngImage::allPixelsHaveFullAlpha() const
+{
+    return mData->allPixelsHaveFullAlpha();
 }
 
 void WPngImage::convertToPixelFormat(PixelFormat newPixelFormat)
@@ -2832,6 +2858,7 @@ WPngImage::PixelFormat WPngImage::getPixelFormat(WPngImage::PngReadConvert conve
 }
 
 
+#if !WPNGIMAGE_DISABLE_PNG_FILE_IO_SUPPORT
 //----------------------------------------------------------------------------
 // Load PNG image from file
 //----------------------------------------------------------------------------
@@ -2881,11 +2908,6 @@ WPngImage::IOStatus WPngImage::loadImageFromRAM(const void* pngData, std::size_t
 //============================================================================
 // Write PNG data
 //============================================================================
-bool WPngImage::allPixelsHaveFullAlpha() const
-{
-    return mData->allPixelsHaveFullAlpha();
-}
-
 template<typename CT>
 static void setColorComponentsG(CT* dest, int colorComponents, const PixelG<CT>& pixel)
 {
@@ -2953,28 +2975,6 @@ void WPngImage::setPixelRow
 //----------------------------------------------------------------------------
 // Save PNG image to file
 //----------------------------------------------------------------------------
-WPngImage::PngFileFormat WPngImage::getClosestMatchFileFormat(PixelFormat pixelFormat)
-{
-    switch(pixelFormat)
-    {
-      case WPngImage::kPixelFormat_GA8: return WPngImage::kPngFileFormat_GA8;
-      case WPngImage::kPixelFormat_GA16:
-      case WPngImage::kPixelFormat_GAF: return WPngImage::kPngFileFormat_GA16;
-      case WPngImage::kPixelFormat_RGBA8: return WPngImage::kPngFileFormat_RGBA8;
-      case WPngImage::kPixelFormat_RGBA16:
-      case WPngImage::kPixelFormat_RGBAF: return WPngImage::kPngFileFormat_RGBA16;
-    }
-    return WPngImage::kPngFileFormat_RGBA8;
-}
-
-WPngImage::PngFileFormat WPngImage::getFileFormat
-(PngWriteConvert conversion, PngFileFormat originalFileFormat, PixelFormat currentPixelFormat)
-{
-    if(conversion == WPngImage::kPngWriteConvert_closestMatch)
-        return getClosestMatchFileFormat(currentPixelFormat);
-    return originalFileFormat;
-}
-
 WPngImage::IOStatus WPngImage::saveImage(const char* fileName, PngFileFormat fileFormat) const
 {
     IOStatus status = performSaveImage(fileName, fileFormat);
@@ -3064,3 +3064,4 @@ bool WPngImage::IOStatus::printErrorMsg(std::ostream& os) const
     }
     return false;
 }
+#endif

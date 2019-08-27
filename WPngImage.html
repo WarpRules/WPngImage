@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage 1.4.1 documentation</title>
+  <title>WPngImage 1.4.2 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -79,7 +79,7 @@ code
 </head>
 
 <body>
-<h1>WPngImage 1.4.1 documentation</h1>
+<h1>WPngImage 1.4.2 documentation</h1>
 
 <p><code>WPngImage</code> is a C++ library to manage images in PNG format. It can be used
   as a completely stand-alone library using the <a href="http://lodev.org/lodepng/">lodepng</a>
@@ -127,6 +127,7 @@ code
   <ul>
     <li><a href="#compiling_standalone">As a stand-alone class</a></li>
     <li><a href="#compiling_libpng">Using libpng</a></li>
+    <li><a href="#compiling_nopng">Without PNG file support</a></li>
     <li><a href="#compiling_other">Other settings</a></li>
   </ul>
   <li><a href="#macros">Precompiler macros</a></li>
@@ -529,6 +530,30 @@ pixel formats</h3>
 <p>In a typical Linux system a program can be compiled like:</p>
 
 <pre>g++ -O3 -std=c++14 example.cc WPngImage.cc WPngImage_libpng.cc -lpng</pre>
+
+<h3 id="compiling_nopng">Without PNG file support</h3>
+
+<p>If you only use <code>WPngImage</code> for its image manipulation functionality (or you are
+  eg. loading and saving the image into a format other than PNG), it may be useful to simply
+  not compile PNG I/O support into the library at all, to save space (and for faster compilation).</p>
+
+<p>In this case the <code>WPNGIMAGE_DISABLE_PNG_FILE_IO_SUPPORT</code> preprocessor macro should be
+  defined with a value of <code>1</code> (this can be done in your project settings, the compiler
+  command-line options, or directly editing the <code>#define</code> at the beginning of <code>PngImage.hh</code>.)
+  In this case only the source file:</p>
+
+<ul>
+  <li><code>WPngImage.cc</code></li>
+</ul>
+
+<p>ought to be compiled into the project. (Note that if you try to compile any of the other source files,
+  it will cause a compiler error.)</p>
+
+<pre>g++ -O3 -std=c++14 -DWPNGIMAGE_DISABLE_PNG_FILE_IO_SUPPORT=1 example.cc WPngImage.cc</pre>
+
+<p>In this case, none of the <code>loadImage()</code> and <code>saveImage()</code> member functions will
+  be compiled in, and therefore cannot be called. Likewise <code>WPngImage::IOStatus</code> will not be
+  defined and thus can't be used.</p>
 
 <h3 id="compiling_other">Other settings</h3>
 
