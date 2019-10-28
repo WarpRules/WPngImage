@@ -55,14 +55,18 @@ li
 
 pre
 {
-  background-color: #E0E0E0;
+  background-color: #F0E8E0;
   padding-left: 1em;
   padding-top: 0.5em;
   padding-bottom: 0.5em;
   border-color: black;
   border: solid;
   border-width: 1px;
-  color: #004070;
+}
+
+.synopsis
+{
+  background-color: #E0E0F0;
 }
 
 code
@@ -74,6 +78,11 @@ code
 .comment
 {
   color: #008000;
+}
+
+.funcname
+{
+  color: #0050FF;
 }
 --> </style>
 </head>
@@ -132,12 +141,12 @@ WPngImage::Pixel8 color = sequence.getInterpolatedPixel(0.125);</pre>
 <p><code>WColorSequence</code> is itself a template class taking a <code>WPngImage</code> pixel
   type as a template parameter.</p>
 
-<pre>template&lt;typename Pixel_t&gt;
+<pre class="synopsis">template&lt;typename Pixel_t&gt;
 class WColorSequence;</pre>
 
 <p>The following type aliases are provided for convenience:</p>
 
-<pre>using WColorSequence8 = WColorSequence&lt;WPngImage::Pixel8&gt;;
+<pre class="synopsis">using WColorSequence8 = WColorSequence&lt;WPngImage::Pixel8&gt;;
 using WColorSequence16 = WColorSequence&lt;WPngImage::Pixel16&gt;;
 using WColorSequenceF = WColorSequence&lt;WPngImage::PixelF&gt;;</pre>
 
@@ -146,14 +155,14 @@ using WColorSequenceF = WColorSequence&lt;WPngImage::PixelF&gt;;</pre>
 <p>The <code>Entry</code> struct defines a key color in the sequence, and a length value to
   the next color in the sequence.</p>
 
-<pre>struct Entry
+<pre class="synopsis">struct Entry
 {
     Pixel_t color;
     double length; <span class="comment">// Default is 1.0</span>
 
-    Entry();
-    Entry(Pixel_t c);
-    Entry(Pixel_t c, double l);
+    <span class="funcname">Entry</span>();
+    <span class="funcname">Entry</span>(Pixel_t c);
+    <span class="funcname">Entry</span>(Pixel_t c, double l);
 };</pre>
 
 <p>The <code>length</code> member specifies the distance between this entry and the
@@ -172,14 +181,14 @@ using WColorSequenceF = WColorSequence&lt;WPngImage::PixelF&gt;;</pre>
   entry are interpreted, how the <code>length</code> values are interpreted, and whether
   the interpolation should be alpha-aware or not:</p>
 
-<pre>struct Settings
+<pre class="synopsis">struct Settings
 {
     MappingType mappingType = MappingType::repeating;
     bool normalizedMapping = true;
     bool alphaAwareInterpolation = true;
 
-    Settings() {}
-    Settings(MappingType t, bool n, bool a)
+    <span class="funcname">Settings</span>() {}
+    <span class="funcname">Settings</span>(MappingType t, bool n, bool a)
 };</pre>
 
 <p>The different mapping types are described in the next section.</p>
@@ -228,18 +237,18 @@ using WColorSequenceF = WColorSequence&lt;WPngImage::PixelF&gt;;</pre>
 
 <p>The following constructors are provided:</p>
 
-<pre>WColorSequence(); <span class="comment">// 1</span>
-WColorSequence(Settings); <span class="comment">// 2</span>
-WColorSequence(const Entry*, std::size_t amount, Settings, bool makeCopy); <span class="comment">// 3</span>
-WColorSequence(const std::vector&lt;Entry&gt;&amp;, Settings, bool makeCopy); <span class="comment">// 4</span>
-WColorSequence(std::vector&lt;Entry&gt;&amp;&amp;, Settings); <span class="comment">// 5</span>
-WColorSequence(std::initializer_list&lt;Entry&gt;, Settings, bool makeCopy); <span class="comment">// 6</span>
+<pre class="synopsis"><span class="funcname">WColorSequence</span>(); <span class="comment">// 1</span>
+<span class="funcname">WColorSequence</span>(Settings); <span class="comment">// 2</span>
+<span class="funcname">WColorSequence</span>(const Entry*, std::size_t amount, Settings, bool makeCopy); <span class="comment">// 3</span>
+<span class="funcname">WColorSequence</span>(const std::vector&lt;Entry&gt;&amp;, Settings, bool makeCopy); <span class="comment">// 4</span>
+<span class="funcname">WColorSequence</span>(std::vector&lt;Entry&gt;&amp;&amp;, Settings); <span class="comment">// 5</span>
+<span class="funcname">WColorSequence</span>(std::initializer_list&lt;Entry&gt;, Settings, bool makeCopy); <span class="comment">// 6</span>
 
 template&lt;std::size_t kArraySize&gt;
-WColorSequence(const Entry(&amp;)[kArraySize], Settings, bool makeCopy); <span class="comment">// 7</span>
+<span class="funcname">WColorSequence</span>(const Entry(&amp;)[kArraySize], Settings, bool makeCopy); <span class="comment">// 7</span>
 
 template&lt;typename InputIterator&gt;
-WColorSequence(InputIterator b, InputIterator e, Settings); <span class="comment">// 8</span></pre>
+<span class="funcname">WColorSequence</span>(InputIterator b, InputIterator e, Settings); <span class="comment">// 8</span></pre>
 
 <p>For the meaning of the <code>makeCopy</code> parameter, consult the next subsection.</p>
 
@@ -262,20 +271,20 @@ WColorSequence(InputIterator b, InputIterator e, Settings); <span class="comment
 
 <p>An existing object can be re-initialized with an equivalent <code>initialize()</code> call:</p>
 
-<pre>void initialize(const Entry*, std::size_t amount, bool makeCopy);
-void initialize(const std::vector&lt;Entry&gt;&amp;, bool makeCopy);
-void initialize(std::vector&lt;Entry&gt;&amp;&amp;);
-void initialize(std::initializer_list&lt;Entry&gt;, bool makeCopy);
+<pre class="synopsis">void <span class="funcname">initialize</span>(const Entry*, std::size_t amount, bool makeCopy);
+void <span class="funcname">initialize</span>(const std::vector&lt;Entry&gt;&amp;, bool makeCopy);
+void <span class="funcname">initialize</span>(std::vector&lt;Entry&gt;&amp;&amp;);
+void <span class="funcname">initialize</span>(std::initializer_list&lt;Entry&gt;, bool makeCopy);
 
 template&lt;std::size_t kArraySize&gt;
-void initialize(const Entry(&amp;)[kArraySize], bool makeCopy);
+void <span class="funcname">initialize</span>(const Entry(&amp;)[kArraySize], bool makeCopy);
 
 template&lt;typename InputIterator&gt;
-void initialize(InputIterator b, InputIterator e);</pre>
+void <span class="funcname">initialize</span>(InputIterator b, InputIterator e);</pre>
 
 <p>The settings can be set or changed with:</p>
 
-<pre>void setSettings(Settings);</pre>
+<pre class="synopsis">void <span class="funcname">setSettings</span>(Settings);</pre>
 
 <h3>Owning vs. non-owning initialization</h3>
 
@@ -304,10 +313,10 @@ void initialize(InputIterator b, InputIterator e);</pre>
 <p>The current data that this object has been initialized with can be retrieved with
   the following functions:</p>
 
-<pre>bool isNonOwning() const;
-const Entry* entriesPtr() const;
-std::size_t entriesAmount() const;
-Settings currentSettings() const;</pre>
+<pre class="synopsis">bool <span class="funcname">isNonOwning</span>() const;
+const Entry* <span class="funcname">entriesPtr</span>() const;
+std::size_t <span class="funcname">entriesAmount</span>() const;
+Settings <span class="funcname">currentSettings</span>() const;</pre>
 
 <p>If this object has not been initialized with any entries, <code>entriesPtr()</code> will
   return <code>nullptr</code> and <code>entriesAmount()</code> will return <code>0</code>.</p>
@@ -316,7 +325,7 @@ Settings currentSettings() const;</pre>
 
 <p>The main color retrieval function is:</p>
 
-<pre>Pixel_t getInterpolatedPixel(double position) const;</pre>
+<pre class="synopsis">Pixel_t <span class="funcname">getInterpolatedPixel</span>(double position) const;</pre>
 
 <p>The beginning of the color sequence always starts at position <code>0.0</code>.</p>
 

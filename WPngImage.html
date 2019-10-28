@@ -55,14 +55,18 @@ li
 
 pre
 {
-  background-color: #E0E0E0;
+  background-color: #F0E8E0;
   padding-left: 1em;
   padding-top: 0.5em;
   padding-bottom: 0.5em;
   border-color: black;
   border: solid;
   border-width: 1px;
-  color: #004070;
+}
+
+.synopsis
+{
+  background-color: #E0E0F0;
 }
 
 code
@@ -74,6 +78,11 @@ code
 .comment
 {
   color: #008000;
+}
+
+.funcname
+{
+  color: #0050FF;
 }
 --> </style>
 </head>
@@ -580,18 +589,18 @@ pixel formats</h3>
 
 <p><code>WPngImage.hh</code> defines the following precompiler macros:</p>
 
-<pre>WPNGIMAGE_VERSION</pre>
+<pre class="synopsis">WPNGIMAGE_VERSION</pre>
 
 <p>An integer containing three values in its three least-significant bytes: Major version
   (third-least-significant byte), minor version (second-least-significant byte), minor
   sub-version (least-significant byte). For example, the value <code>0x010100</code> indicates
   the version 1.1.0.</p>
 
-<pre>WPNGIMAGE_VERSION_STRING</pre>
+<pre class="synopsis">WPNGIMAGE_VERSION_STRING</pre>
 
 <p>The version in string format. For example, <code>"1.1.0"</code>.</p>
 
-<pre>WPNGIMAGE_COPYRIGHT_STRING</pre>
+<pre class="synopsis">WPNGIMAGE_COPYRIGHT_STRING</pre>
 
 <p>A string containing short copyright info. For example,
   <code>"WPngImage v1.1.0 (C)2016 Juha Nieminen"</code>.</p>
@@ -603,7 +612,7 @@ pixel formats</h3>
 <p>These enumerated values defined inside <code>WPngImage</code> are used by the various
   member functions:</p>
 
-<pre><span class="comment">// PNG file format</span>
+<pre class="synopsis"><span class="comment">// PNG file format</span>
 enum PngFileFormat
 {
     kPngFileFormat_none,
@@ -645,11 +654,11 @@ enum PngWriteConvert
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_constructors">Constructors</h3>
 
-<pre>WPngImage();
-WPngImage(int width, int height, PixelFormat = kPixelFormat_RGBA8);
-WPngImage(int width, int height, Pixel8, PixelFormat = kPixelFormat_RGBA8);
-WPngImage(int width, int height, Pixel16, PixelFormat = kPixelFormat_RGBA16);
-WPngImage(int width, int height, PixelF, PixelFormat = kPixelFormat_RGBAF);</pre>
+<pre class="synopsis"><span class="funcname">WPngImage</span>();
+<span class="funcname">WPngImage</span>(int width, int height, PixelFormat = kPixelFormat_RGBA8);
+<span class="funcname">WPngImage</span>(int width, int height, Pixel8, PixelFormat = kPixelFormat_RGBA8);
+<span class="funcname">WPngImage</span>(int width, int height, Pixel16, PixelFormat = kPixelFormat_RGBA16);
+<span class="funcname">WPngImage</span>(int width, int height, PixelF, PixelFormat = kPixelFormat_RGBAF);</pre>
 
 <p>The default constructor creates an empty instance, with no image data. (Any operation
   done to such an instance will just do nothing.) An image can then be either created
@@ -675,17 +684,17 @@ WPngImage image(256, 256, WPngImage::Pixel8(0, 0, 0, 0));</pre>
   with these member functions (only some pointers are moved/swapped rather than all the image
   data):</code>
 
-<pre>void move(WPngImage&amp;);
-void swap(WPngImage&amp;);</pre>
+<pre class="synopsis">void <span class="funcname">move</span>(WPngImage&amp;);
+void <span class="funcname">swap</span>(WPngImage&amp;);</pre>
 
 
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_new_image">Create new image</h3>
 
-<pre>void newImage(int width, int height, PixelFormat = kPixelFormat_RGBA8);
-void newImage(int width, int height, Pixel8, PixelFormat = kPixelFormat_RGBA8);
-void newImage(int width, int height, Pixel16, PixelFormat = kPixelFormat_RGBA16);
-void newImage(int width, int height, PixelF, PixelFormat = kPixelFormat_RGBAF);</pre>
+<pre class="synopsis">void <span class="funcname">newImage</span>(int width, int height, PixelFormat = kPixelFormat_RGBA8);
+void <span class="funcname">newImage</span>(int width, int height, Pixel8, PixelFormat = kPixelFormat_RGBA8);
+void <span class="funcname">newImage</span>(int width, int height, Pixel16, PixelFormat = kPixelFormat_RGBA16);
+void <span class="funcname">newImage</span>(int width, int height, PixelF, PixelFormat = kPixelFormat_RGBAF);</pre>
 
 <p>These are completely equivalent to the constructors. Any previously existing image data
   in this instance will be destroyed before creating the new image data.</p>
@@ -693,13 +702,13 @@ void newImage(int width, int height, PixelF, PixelFormat = kPixelFormat_RGBAF);<
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_load_file">Load a PNG file</h3>
 
-<pre>IOStatus loadImage(const char* fileName,
+<pre class="synopsis">IOStatus <span class="funcname">loadImage</span>(const char* fileName,
                    PngReadConvert = kPngReadConvert_closestMatch);
-IOStatus loadImage(const char* fileName, PixelFormat);
+IOStatus <span class="funcname">loadImage</span>(const char* fileName, PixelFormat);
 
-IOStatus loadImage(const std::string&amp; fileName,
+IOStatus <span class="funcname">loadImage</span>(const std::string&amp; fileName,
                    PngReadConvert = kPngReadConvert_closestMatch);
-IOStatus loadImage(const std::string&amp; fileName, PixelFormat);</pre>
+IOStatus <span class="funcname">loadImage</span>(const std::string&amp; fileName, PixelFormat);</pre>
 
 <p>The PNG file specified by <code>fileName</code> will be attempted to be loaded.
   The second parameter can be a value of type <code>WPngImage::PngReadConvert</code>, which
@@ -738,9 +747,9 @@ IOStatus loadImage(const std::string&amp; fileName, PixelFormat);</pre>
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_load_ram">Decode a PNG from RAM</h3>
 
-<pre>IOStatus loadImageFromRAM(const void* pngData, std::size_t pngDataSize,
+<pre class="synopsis">IOStatus <span class="funcname">loadImageFromRAM</span>(const void* pngData, std::size_t pngDataSize,
                           PngReadConvert = kPngReadConvert_closestMatch);
-IOStatus loadImageFromRAM(const void* pngData, std::size_t pngDataSize, PixelFormat);</pre>
+IOStatus <span class="funcname">loadImageFromRAM</span>(const void* pngData, std::size_t pngDataSize, PixelFormat);</pre>
 
 <p>A PNG image can also be decoded from RAM. These work in the same way as
   <code>loadImage()</code>, but they take a pointer and the size of the data (in bytes).</p>
@@ -753,13 +762,13 @@ IOStatus loadImageFromRAM(const void* pngData, std::size_t pngDataSize, PixelFor
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_save_file">Save to a PNG file</h3>
 
-<pre>IOStatus saveImage(const char* fileName,
+<pre class="synopsis">IOStatus <span class="funcname">saveImage</span>(const char* fileName,
                    PngWriteConvert = kPngWriteConvert_closestMatch) const;
-IOStatus saveImage(const char* fileName, PngFileFormat) const;
+IOStatus <span class="funcname">saveImage</span>(const char* fileName, PngFileFormat) const;
 
-IOStatus saveImage(const std::string&amp; fileName,
+IOStatus <span class="funcname">saveImage</span>(const std::string&amp; fileName,
                    PngWriteConvert = kPngWriteConvert_closestMatch) const;
-IOStatus saveImage(const std::string&amp; fileName, PngFileFormat) const;</pre>
+IOStatus <span class="funcname">saveImage</span>(const std::string&amp; fileName, PngFileFormat) const;</pre>
 
 <p>Save the current image data to a PNG file. (If there is currently no image data,
   does nothing.) A specific PNG pixel format can be specified as a second parameter (see section
@@ -787,7 +796,7 @@ IOStatus saveImage(const std::string&amp; fileName, PngFileFormat) const;</pre>
 <p>The "original pixel format of the PNG file" can be changed after loading a file with
   a call to the function:</p>
 
-<pre>void setFileFormat(PngFileFormat);</pre>
+<pre class="synopsis">void <span class="funcname">setFileFormat</span>(PngFileFormat);</pre>
 
 <p>After this, <code>WPngImage::kPngWriteConvert_original</code> will be interpreted as
   that specified format.</p>
@@ -807,17 +816,17 @@ IOStatus saveImage(const std::string&amp; fileName, PngFileFormat) const;</pre>
 
 <p>Encode into a <code>std::vector&lt;unsigned char&gt;</code>:</p>
 
-<pre>IOStatus saveImageToRAM(std::vector&lt;unsigned char&gt;&amp; dest,
+<pre class="synopsis">IOStatus <span class="funcname">saveImageToRAM</span>(std::vector&lt;unsigned char&gt;&amp; dest,
                         PngWriteConvert = kPngWriteConvert_closestMatch) const;
-IOStatus saveImageToRAM(std::vector&lt;unsigned char&gt;&amp; dest, PngFileFormat) const;</pre>
+IOStatus <span class="funcname">saveImageToRAM</span>(std::vector&lt;unsigned char&gt;&amp; dest, PngFileFormat) const;</pre>
 
 <p>Pass the encoded data to a callback function:</p>
 
-<pre>using ByteStreamOutputFunc = std::function&lt;void(const unsigned char*, std::size_t)&gt;;
+<pre class="synopsis">using ByteStreamOutputFunc = std::function&lt;void(const unsigned char*, std::size_t)&gt;;
 
-IOStatus saveImageToRAM(ByteStreamOutputFunc,
+IOStatus <span class="funcname">saveImageToRAM</span>(ByteStreamOutputFunc,
                         PngWriteConvert = kPngWriteConvert_closestMatch) const;
-IOStatus saveImageToRAM(ByteStreamOutputFunc, PngFileFormat) const;</pre>
+IOStatus <span class="funcname">saveImageToRAM</span>(ByteStreamOutputFunc, PngFileFormat) const;</pre>
 
 <p>Note that in the latter case, the callback function may be called numerous times, with
   differing amounts of data, which should be appended to each other by the function.</p>
@@ -827,7 +836,7 @@ IOStatus saveImageToRAM(ByteStreamOutputFunc, PngFileFormat) const;</pre>
   or a lambda, can be used. If the library is compiled in C++98 compatibility mode, however,
   the above type alias will instead be:</p>
 
-<pre>typedef void(*ByteStreamOutputFunc)(const unsigned char*, std::size_t);</pre>
+<pre class="synopsis">typedef void(*ByteStreamOutputFunc)(const unsigned char*, std::size_t);</pre>
 
 <p>meaning that only a raw function can be used.</p>
 
@@ -839,7 +848,7 @@ IOStatus saveImageToRAM(ByteStreamOutputFunc, PngFileFormat) const;</pre>
 <p><code>WPngImage::IOStatus</code> is an object returned by the loading and saving functions.
   It contains the following members:</p>
 
-<pre>IOStatusValue value;
+<pre class="synopsis">IOStatusValue value;
 std::string fileName, pngLibErrorMsg;
 int errnoValue;</pre>
 
@@ -870,7 +879,7 @@ int errnoValue;</pre>
 <p><code>WPngImage::IOStatus</code> also has a utility member function for simplified error
   message printing:</p>
 
-<pre>bool printErrorMsg(std::ostream&amp; = std::cerr) const;</pre>
+<pre class="synopsis">bool <span class="funcname">printErrorMsg</span>(std::ostream&amp; = std::cerr) const;</pre>
 
 <p>If there was an error, it will print an error message (in English) to the given stream
   (by default <code>std::cerr</code> if not specified) and return true. If there was no error,
@@ -909,31 +918,31 @@ switch(status)
 
 <p>Image dimensions:</p>
 
-<pre>int width() const;
-int height() const;</pre>
+<pre class="synopsis">int <span class="funcname">width</span>() const;
+int <span class="funcname">height</span>() const;</pre>
 
 <p>The original pixel format of the loaded PNG file (if one has been loaded):</p>
 
-<pre>PngFileFormat originalFileFormat() const;
-void setFileFormat(PngFileFormat);</pre>
+<pre class="synopsis">PngFileFormat <span class="funcname">originalFileFormat</span>() const;
+void <span class="funcname">setFileFormat</span>(PngFileFormat);</pre>
 
 <p>Current pixel format properties:</p>
 
-<pre>PixelFormat currentPixelFormat() const;
-bool isGrayscalePixelFormat() const;
-bool isRGBAPixelFormat() const;
-bool is8BPCPixelFormat() const;
-bool is16BPCPixelFormat() const;
-bool isFloatPixelFormat() const;</pre>
+<pre class="synopsis">PixelFormat <span class="funcname">currentPixelFormat</span>() const;
+bool <span class="funcname">isGrayscalePixelFormat</span>() const;
+bool <span class="funcname">isRGBAPixelFormat</span>() const;
+bool <span class="funcname">is8BPCPixelFormat</span>() const;
+bool <span class="funcname">is16BPCPixelFormat</span>() const;
+bool <span class="funcname">isFloatPixelFormat</span>() const;</pre>
 
 <p>The following static const bool variable can be used to determine if the class is using
   libpng or lodepng:</p>
 
-<pre>static const bool isUsingLibpng;</pre>
+<pre class="synopsis">static const bool isUsingLibpng;</pre>
 
 <p>Convert the current image to another pixel format:</p>
 
-<pre>void convertToPixelFormat(PixelFormat);</pre>
+<pre class="synopsis">void <span class="funcname">convertToPixelFormat</span>(PixelFormat);</pre>
 
 <p>Note that this is a relatively heavy operation because it internally creates a new
   image data and transfers all the pixels from the existing one to the new one (doing
@@ -943,17 +952,17 @@ bool isFloatPixelFormat() const;</pre>
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_pixels">Getting and setting pixels</h3>
 
-<pre>Pixel8 get8(int x, int y) const;
-Pixel16 get16(int x, int y) const;
-PixelF getF(int x, int y) const;
+<pre class="synopsis">Pixel8 <span class="funcname">get8</span>(int x, int y) const;
+Pixel16 <span class="funcname">get16</span>(int x, int y) const;
+PixelF <span class="funcname">getF</span>(int x, int y) const;
 
-void set(int x, int y, Pixel8);
-void set(int x, int y, Pixel16);
-void set(int x, int y, PixelF);
+void <span class="funcname">set</span>(int x, int y, Pixel8);
+void <span class="funcname">set</span>(int x, int y, Pixel16);
+void <span class="funcname">set</span>(int x, int y, PixelF);
 
-void fill(Pixel8);
-void fill(Pixel16);
-void fill(PixelF);</pre>
+void <span class="funcname">fill</span>(Pixel8);
+void <span class="funcname">fill</span>(Pixel16);
+void <span class="funcname">fill</span>(PixelF);</pre>
 
 <p>See the section <a href="#pixel_reference">Pixel reference</a> for details on the
   pixel objects.</p>
@@ -977,23 +986,23 @@ void fill(PixelF);</pre>
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_transform">Changing all the pixels</h3>
 
-<pre>using TransformFunc8 = std::function&lt;Pixel8(Pixel8)&gt;;
+<pre class="synopsis">using TransformFunc8 = std::function&lt;Pixel8(Pixel8)&gt;;
 using TransformFunc16 = std::function&lt;Pixel16(Pixel16)&gt;;
 using TransformFuncF = std::function&lt;PixelF(PixelF)&gt;;
 
-void transform(TransformFunc8);
-void transform(TransformFunc16);
-void transform(TransformFuncF);
-void transform(TransformFunc8, WPngImage&amp; dest) const;
-void transform(TransformFunc16, WPngImage&amp; dest) const;
-void transform(TransformFuncF, WPngImage&amp; dest) const;
+void <span class="funcname">transform</span>(TransformFunc8);
+void <span class="funcname">transform</span>(TransformFunc16);
+void <span class="funcname">transform</span>(TransformFuncF);
+void <span class="funcname">transform</span>(TransformFunc8, WPngImage&amp; dest) const;
+void <span class="funcname">transform</span>(TransformFunc16, WPngImage&amp; dest) const;
+void <span class="funcname">transform</span>(TransformFuncF, WPngImage&amp; dest) const;
 
-void transform8(TransformFunc8);
-void transform16(TransformFunc16);
-void transformF(TransformFuncF);
-void transform8(TransformFunc8, WPngImage&amp; dest);
-void transform16(TransformFunc16, WPngImage&amp; dest);
-void transformF(TransformFuncF, WPngImage&amp; dest);</pre>
+void <span class="funcname">transform8</span>(TransformFunc8);
+void <span class="funcname">transform16</span>(TransformFunc16);
+void <span class="funcname">transformF</span>(TransformFuncF);
+void <span class="funcname">transform8</span>(TransformFunc8, WPngImage&amp; dest);
+void <span class="funcname">transform16</span>(TransformFunc16, WPngImage&amp; dest);
+void <span class="funcname">transformF</span>(TransformFuncF, WPngImage&amp; dest);</pre>
 
 <p>These functions can be used to change all the pixels of the image using an unary functor.
   For each pixel in the image, the functor is given it as parameter, and its return value is
@@ -1020,7 +1029,7 @@ void transformF(TransformFuncF, WPngImage&amp; dest);</pre>
 <p>If the library is compiled in C++98 compatibility mode, the functions can only take
   a function pointer as parameter. The function types will be:</p>
 
-<pre>typedef Pixel8(*TransformFunc8)(Pixel8);
+<pre class="synopsis">typedef Pixel8(*TransformFunc8)(Pixel8);
 typedef Pixel16(*TransformFunc16)(Pixel16);
 typedef PixelF(*TransformFuncF)(PixelF);</pre>
 
@@ -1028,12 +1037,12 @@ typedef PixelF(*TransformFuncF)(PixelF);</pre>
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_drawing_images">Drawing images</h3>
 
-<pre>void putImage(int destX, int destY, const WPngImage&amp;);
-void putImage(int destX, int destY, const WPngImage&amp;,
+<pre class="synopsis">void <span class="funcname">putImage</span>(int destX, int destY, const WPngImage&amp;);
+void <span class="funcname">putImage</span>(int destX, int destY, const WPngImage&amp;,
               int srcX, int srcY, int srcWidth, int srcHeight);
 
-void drawImage(int destX, int destY, const WPngImage&amp;);
-void drawImage(int destX, int destY, const WPngImage&amp;,
+void <span class="funcname">drawImage</span>(int destX, int destY, const WPngImage&amp;);
+void <span class="funcname">drawImage</span>(int destX, int destY, const WPngImage&amp;,
                int srcX, int srcY, int srcWidth, int srcHeight);</pre>
 
 <p>These functions will copy the pixels from a given image ("parameter image") to
@@ -1064,9 +1073,9 @@ void drawImage(int destX, int destY, const WPngImage&amp;,
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_drawing_pixels">Drawing pixels</h3>
 
-<pre>void drawPixel(int x, int y, Pixel8);
-void drawPixel(int x, int y, Pixel16);
-void drawPixel(int x, int y, PixelF);</pre>
+<pre class="synopsis">void <span class="funcname">drawPixel</span>(int x, int y, Pixel8);
+void <span class="funcname">drawPixel</span>(int x, int y, Pixel16);
+void <span class="funcname">drawPixel</span>(int x, int y, PixelF);</pre>
 
 <p>These are similar to the <code>set()</code> functions, except that the given pixel is
   blended with the destination pixel using alpha blending. (This makes a difference if the
@@ -1081,10 +1090,10 @@ void drawPixel(int x, int y, PixelF);</pre>
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_drawing_lines">Drawing lines</h3>
 
-<pre>void putHorLine(int x, int y, int length, Pixel_t);
-void putVertLine(int x, int y, int length, Pixel_t);
-void drawHorLine(int x, int y, int length, Pixel_t);
-void drawVertLine(int x, int y, int length, Pixel_t);</pre>
+<pre class="synopsis">void <span class="funcname">putHorLine</span>(int x, int y, int length, Pixel_t);
+void <span class="funcname">putVertLine</span>(int x, int y, int length, Pixel_t);
+void <span class="funcname">drawHorLine</span>(int x, int y, int length, Pixel_t);
+void <span class="funcname">drawVertLine</span>(int x, int y, int length, Pixel_t);</pre>
 
 <p>These are simple convenience functions to draw horizontal and vertical lines.</p>
 
@@ -1101,8 +1110,8 @@ void drawVertLine(int x, int y, int length, Pixel_t);</pre>
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_drawing_rectangles">Drawing rectangles</h3>
 
-<pre>void putRect(int x, int y, int width, int height, Pixel_t, bool filled);
-void drawRect(int x, int y, int width, int height, Pixel_t, bool filled);</pre>
+<pre class="synopsis">void <span class="funcname">putRect</span>(int x, int y, int width, int height, Pixel_t, bool filled);
+void <span class="funcname">drawRect</span>(int x, int y, int width, int height, Pixel_t, bool filled);</pre>
 
 <p>These are simple convenience functions to draw rectangles.</p>
 
@@ -1125,10 +1134,10 @@ void drawRect(int x, int y, int width, int height, Pixel_t, bool filled);</pre>
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_resize_canvas">Resize canvas</h3>
 
-<pre>void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight);
-void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, Pixel8);
-void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, Pixel16);
-void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, PixelF);</pre>
+<pre class="synopsis">void <span class="funcname">resizeCanvas</span>(int newOriginX, int newOriginY, int newWidth, int newHeight);
+void <span class="funcname">resizeCanvas</span>(int newOriginX, int newOriginY, int newWidth, int newHeight, Pixel8);
+void <span class="funcname">resizeCanvas</span>(int newOriginX, int newOriginY, int newWidth, int newHeight, Pixel16);
+void <span class="funcname">resizeCanvas</span>(int newOriginX, int newOriginY, int newWidth, int newHeight, PixelF);</pre>
 
 <p>These functions can be used to resize the area of the current image. This will either
   expand the image (by adding pixels of the specified color) or crop the image, depending
@@ -1150,11 +1159,11 @@ void resizeCanvas(int newOriginX, int newOriginY, int newWidth, int newHeight, P
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_flip_rotate">Flipping and rotating the image</h3>
 
-<pre>void flipHorizontally();
-void flipVertically();
-void rotate180();
-void rotate90cw();
-void rotate90ccw();</pre>
+<pre class="synopsis">void <span class="funcname">flipHorizontally</span>();
+void <span class="funcname">flipVertically</span>();
+void <span class="funcname">rotate180</span>();
+void <span class="funcname">rotate90cw</span>();
+void <span class="funcname">rotate90ccw</span>();</pre>
 
 <p>These functions flip the image horizontally and vertically, or rotate it 180 or 90
   degrees clockwise or counter-clockwise. (Rotating the image 90 degrees will swap
@@ -1168,10 +1177,10 @@ void rotate90ccw();</pre>
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_translate">Translating the image</h3>
 
-<pre>void translate(int xOffset, int yOffset);
-void translate(int xOffset, int yOffset, Pixel8);
-void translate(int xOffset, int yOffset, Pixel16);
-void translate(int xOffset, int yOffset, PixelF);</pre>
+<pre class="synopsis">void <span class="funcname">translate</span>(int xOffset, int yOffset);
+void <span class="funcname">translate</span>(int xOffset, int yOffset, Pixel8);
+void <span class="funcname">translate</span>(int xOffset, int yOffset, Pixel16);
+void <span class="funcname">translate</span>(int xOffset, int yOffset, PixelF);</pre>
 
 <p>These functions will translate the image by a given amount. (<code>xOffset</code> and
   <code>yOffset</code> can be positive, negative or zero.) The pixels that end up outside
@@ -1191,7 +1200,7 @@ void translate(int xOffset, int yOffset, PixelF);</pre>
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_premultiply_alpha">Premultiply alpha</h3>
 
-<pre>void premultiplyAlpha();</pre>
+<pre class="synopsis">void <span class="funcname">premultiplyAlpha</span>();</pre>
 
 <p>Multiplies each component of every pixel by the alpha value of that pixel
   (and, in the case of the integer pixel formats, divides by the maximum component
@@ -1205,12 +1214,12 @@ void translate(int xOffset, int yOffset, PixelF);</pre>
 <!---------------------------------------------------------------------------->
 <h3 id="wpngimage_lowlevel">Low level access</h3>
 
-<pre>const Pixel8* getRawPixelData8() const;
-Pixel8* getRawPixelData8();
-const Pixel16* getRawPixelData16() const;
-Pixel16* getRawPixelData16();
-const PixelF* getRawPixelDataF() const;
-PixelF* getRawPixelDataF();</pre>
+<pre class="synopsis">const Pixel8* <span class="funcname">getRawPixelData8</span>() const;
+Pixel8* <span class="funcname">getRawPixelData8</span>();
+const Pixel16* <span class="funcname">getRawPixelData16</span>() const;
+Pixel16* <span class="funcname">getRawPixelData16</span>();
+const PixelF* <span class="funcname">getRawPixelDataF</span>() const;
+PixelF* <span class="funcname">getRawPixelDataF</span>();</pre>
 
 <p>These functions return a raw pointer to the pixel data managed by this class.
   The pointer, if not null, will point to an array of <code>width()*height()</code>
@@ -1265,11 +1274,11 @@ PixelF* getRawPixelDataF();</pre>
 
 <p>Each pixel type has these five constructors:</p>
 
-<pre>Pixel_t();
-explicit Pixel_t(CT gray);
-Pixel_t(CT gray, CT alpha);
-Pixel_t(CT red, CT green, CT blue);
-Pixel_t(CT red, CT green, CT blue, CT alpha);</pre>
+<pre class="synopsis"><span class="funcname">Pixel_t</span>();
+explicit <span class="funcname">Pixel_t</span>(CT gray);
+<span class="funcname">Pixel_t</span>(CT gray, CT alpha);
+<span class="funcname">Pixel_t</span>(CT red, CT green, CT blue);
+<span class="funcname">Pixel_t</span>(CT red, CT green, CT blue, CT alpha);</pre>
 
 <ol>
   <li>Black with full alpha.</li>
@@ -1284,8 +1293,8 @@ Pixel_t(CT red, CT green, CT blue, CT alpha);</pre>
   The component values will be converted appropriately. For example, <code>Pixel8</code> has
   the following constructors:</p>
 
-<pre>explicit Pixel8(Pixel16);
-explicit Pixel8(PixelF);</pre>
+<pre class="synopsis">explicit <span class="funcname">Pixel8</span>(Pixel16);
+explicit <span class="funcname">Pixel8</span>(PixelF);</pre>
 
 <p>The other two pixel classes have correspondent constructors.
 
@@ -1297,21 +1306,21 @@ explicit Pixel8(PixelF);</pre>
   Consult the section <a href="#pixel_color_space_conversions">Color space conversions</a>
   for more on this.</p>
 
-<pre>explicit Pixel_t(const HSV&amp;);
-explicit Pixel_t(const HSL&amp;);
-explicit Pixel_t(const XYZ&amp;);
-explicit Pixel_t(const YXY&amp;);
-explicit Pixel_t(const CMY&amp;);
-explicit Pixel_t(const CMYK&amp;);</pre>
+<pre class="synopsis">explicit <span class="funcname">Pixel_t</span>(const HSV&amp;);
+explicit <span class="funcname">Pixel_t</span>(const HSL&amp;);
+explicit <span class="funcname">Pixel_t</span>(const XYZ&amp;);
+explicit <span class="funcname">Pixel_t</span>(const YXY&amp;);
+explicit <span class="funcname">Pixel_t</span>(const CMY&amp;);
+explicit <span class="funcname">Pixel_t</span>(const CMYK&amp;);</pre>
 
 <p>Pixel values can also be set using these convenience functions. They are equivalent
   to the constructors, except that the versions not taking an alpha value will leave
   the current alpha value unmodified.</p>
 
-<pre>void set(CT gray);
-void set(CT gray, CT alpha);
-void set(CT red, CT green, CT blue);
-void set(CT red, CT green, CT blue, CT alpha);</pre>
+<pre class="synopsis">void <span class="funcname">set</span>(CT gray);
+void <span class="funcname">set</span>(CT gray, CT alpha);
+void <span class="funcname">set</span>(CT red, CT green, CT blue);
+void <span class="funcname">set</span>(CT red, CT green, CT blue, CT alpha);</pre>
 
 
 <!---------------------------------------------------------------------------->
@@ -1375,7 +1384,7 @@ pixel1 += pixel2;</pre>
 <p><code>WPngImage</code> supports a number of color space conversions for pixels. The class
   defines the following structs, each for the correspondent color space:</p>
 
-<pre>struct WPngImage::HSV { Float h, s, v, a; };
+<pre class="synopsis">struct WPngImage::HSV { Float h, s, v, a; };
 struct WPngImage::HSL { Float h, s, l, a; };
 struct WPngImage::XYZ { Float x, y, z, a; };
 struct WPngImage::YXY { Float Y, x, y, a; };
@@ -1385,43 +1394,43 @@ struct WPngImage::CMYK { Float c, m, y, k, a; };</pre>
 <p>The pixel classes define the following member functions to convert the pixel to the
   correspondent color space:</p>
 
-<pre>HSV toHSV() const;
-HSL toHSL() const;
-XYZ toXYZ() const;
-YXY toYXY() const;
-CMY toCMY() const;
-CMYK toCMYK() const;</pre>
+<pre class="synopsis">HSV <span class="funcname">toHSV</span>() const;
+HSL <span class="funcname">toHSL</span>() const;
+XYZ <span class="funcname">toXYZ</span>() const;
+YXY <span class="funcname">toYXY</span>() const;
+CMY <span class="funcname">toCMY</span>() const;
+CMYK <span class="funcname">toCMYK</span>() const;</pre>
 
 <p>The conversion back to the RGBA pixel can be done by giving the color space struct
   instance to its constructor (the pixel classes have an explicit constructor for each color
   space struct), or by calling one of these member functions:</p>
 
-<pre>void set(const HSV&amp;);
-void setFromHSV(Float h, Float s, Float v);
-void setFromHSV(Float h, Float s, Float v, Float a);
-void set(const HSL&amp;);
-void setFromHSL(Float h, Float s, Float l);
-void setFromHSL(Float h, Float s, Float l, Float a);
-void set(const XYZ&amp;);
-void setFromXYZ(Float x, Float y, Float z);
-void setFromXYZ(Float x, Float y, Float z, Float a);
-void set(const YXY&amp;);
-void setFromYXY(Float Y, Float x, Float y);
-void setFromYXY(Float Y, Float x, Float y, Float a);
-void set(const CMY&amp;);
-void setFromCMY(Float c, Float m, Float y);
-void setFromCMY(Float c, Float m, Float y, Float a);
-void set(const CMYK&amp;);
-void setFromCMYK(Float c, Float m, Float y, Float k);
-void setFromCMYK(Float c, Float m, Float y, Float k, Float a);</pre>
+<pre class="synopsis">void <span class="funcname">set</span>(const HSV&amp;);
+void <span class="funcname">setFromHSV</span>(Float h, Float s, Float v);
+void <span class="funcname">setFromHSV</span>(Float h, Float s, Float v, Float a);
+void <span class="funcname">set</span>(const HSL&amp;);
+void <span class="funcname">setFromHSL</span>(Float h, Float s, Float l);
+void <span class="funcname">setFromHSL</span>(Float h, Float s, Float l, Float a);
+void <span class="funcname">set</span>(const XYZ&amp;);
+void <span class="funcname">setFromXYZ</span>(Float x, Float y, Float z);
+void <span class="funcname">setFromXYZ</span>(Float x, Float y, Float z, Float a);
+void <span class="funcname">set</span>(const YXY&amp;);
+void <span class="funcname">setFromYXY</span>(Float Y, Float x, Float y);
+void <span class="funcname">setFromYXY</span>(Float Y, Float x, Float y, Float a);
+void <span class="funcname">set</span>(const CMY&amp;);
+void <span class="funcname">setFromCMY</span>(Float c, Float m, Float y);
+void <span class="funcname">setFromCMY</span>(Float c, Float m, Float y, Float a);
+void <span class="funcname">set</span>(const CMYK&amp;);
+void <span class="funcname">setFromCMYK</span>(Float c, Float m, Float y, Float k);
+void <span class="funcname">setFromCMYK</span>(Float c, Float m, Float y, Float k, Float a);</pre>
 
 <!---------------------------------------------------------------------------->
 <h3 id="pixel_other">Other operations</h3>
 
 <h4>Alpha blending</h4>
 
-<pre>void blendWith(const Pixel_t&amp; src);
-Pixel_t blendedPixel(const Pixel_t&amp; src) const;</pre>
+<pre class="synopsis">void <span class="funcname">blendWith</span>(const Pixel_t&amp; src);
+Pixel_t <span class="funcname">blendedPixel</span>(const Pixel_t&amp; src) const;</pre>
 
 <p>Mixes two pixels by alpha-blending the pixel given as parameter on top of this pixel.
   (This will have an effect if the alpha of the pixel given as parameter is different from
@@ -1429,19 +1438,19 @@ Pixel_t blendedPixel(const Pixel_t&amp; src) const;</pre>
 
 <h4>Averaging pixels</h4>
 
-<pre>void averageWith(const Pixel_t&amp;);
+<pre class="synopsis">void <span class="funcname">averageWith</span>(const Pixel_t&amp;);
 
-Pixel_t averagedPixel(const Pixel_t&amp;) const;
+Pixel_t <span class="funcname">averagedPixel</span>(const Pixel_t&amp;) const;
 
-void averageWith(const Pixel_t*, std::size_t amount);
+void <span class="funcname">averageWith</span>(const Pixel_t*, std::size_t amount);
 
-Pixel_t averagedPixel(const Pixel_t*, std::size_t amount) const;
-
-template&lt;typename... Rest&gt;
-void averageWith(const Pixel_t&amp;, Rest&amp;&amp;...);
+Pixel_t <span class="funcname">averagedPixel</span>(const Pixel_t*, std::size_t amount) const;
 
 template&lt;typename... Rest&gt;
-Pixel_t averagedPixel(const Pixel_t&amp;, Rest&amp;&amp;...) const;</pre>
+void <span class="funcname">averageWith</span>(const Pixel_t&amp;, Rest&amp;&amp;...);
+
+template&lt;typename... Rest&gt;
+Pixel_t <span class="funcname">averagedPixel</span>(const Pixel_t&amp;, Rest&amp;&amp;...) const;</pre>
 
 <p>Performs proper (alpha-aware) averaging of pixels. (In other words, calculates the
   weighted average of the pixel color components, using their alphas as the weight factors.
@@ -1457,11 +1466,11 @@ WPngImage::PixelF average2 = pixel1.averagedPixel(pixel2, pixel3, pixel4);</pre>
 
 <h4>Interpolating between pixels</h4>
 
-<pre>void interpolate(const Pixel_t&amp;, CT factor);
-Pixel_t interpolatedPixel(const Pixel_t&amp;, CT factor) const;
+<pre class="synopsis">void <span class="funcname">interpolate</span>(const Pixel_t&amp;, CT factor);
+Pixel_t <span class="funcname">interpolatedPixel</span>(const Pixel_t&amp;, CT factor) const;
 
-void rawInterpolate(const Pixel_t&amp;, CT factor);
-Pixel_t rawInterpolatedPixel(const Pixel_t&amp;, CT factor) const;</pre>
+void <span class="funcname">rawInterpolate</span>(const Pixel_t&amp;, CT factor);
+Pixel_t <span class="funcname">rawInterpolatedPixel</span>(const Pixel_t&amp;, CT factor) const;</pre>
 
 <p>The first pair of functions calculates proper (alpha-aware) interpolation between this
   pixel and the one given as parameter. The second pair calculates a simple component-wise
@@ -1486,21 +1495,21 @@ Pixel_t rawInterpolatedPixel(const Pixel_t&amp;, CT factor) const;</pre>
 
 <p><code>Pixel8</code> and <code>Pixel16</code>:</p>
 
-<pre>CT toGray(Int32 rWeight = 299, Int32 gWeight = 587, Int32 bWeight = 114) const;
-Pixel_t grayPixel(Int32 rWeight = 299, Int32 gWeight = 587, Int32 bWeight = 114) const;</pre>
+<pre class="synopsis">CT <span class="funcname">toGray</span>(Int32 rWeight = 299, Int32 gWeight = 587, Int32 bWeight = 114) const;
+Pixel_t <span class="funcname">grayPixel</span>(Int32 rWeight = 299, Int32 gWeight = 587, Int32 bWeight = 114) const;</pre>
 
 <p><code>PixelF</code>:</p>
 
-<pre>Float toGray(Float rWeight = 0.299f, Float gWeight = 0.587f, Float bWeight = 0.114f) const;
-PixelF grayPixel(Float rWeight = 0.299f, Float gWeight = 0.587f, Float bWeight = 0.114f) const;</pre>
+<pre class="synopsis">Float <span class="funcname">toGray</span>(Float rWeight = 0.299f, Float gWeight = 0.587f, Float bWeight = 0.114f) const;
+PixelF <span class="funcname">grayPixel</span>(Float rWeight = 0.299f, Float gWeight = 0.587f, Float bWeight = 0.114f) const;</pre>
 
 <p>These perform a simplistic conversion to grayscale using a weight value for each color
   component. To use different weights than the defaults, specify them as parameters.</p>
 
 <h4>Converting to grayscale (CIE)</h4>
 
-<pre>CT toGrayCIE() const;
-Pixel_t grayCIEPixel() const;</pre>
+<pre class="synopsis">CT <span class="funcname">toGrayCIE</span>() const;
+Pixel_t <span class="funcname">grayCIEPixel</span>() const;</pre>
 
 <p>These perform a colorimetric (luminance-preserving) conversion to grayscale, as defined
   by the CIE 1931 standard. This is a more complicated (and thus slightly heavier) conversion
@@ -1508,8 +1517,8 @@ Pixel_t grayCIEPixel() const;</pre>
 
 <h4>Premultiply alpha</h4>
 
-<pre>void premultiplyAlpha();
-Pixel_t premultipliedAlphaPixel() const;</pre>
+<pre class="synopsis">void <span class="funcname">premultiplyAlpha</span>();
+Pixel_t <span class="funcname">premultipliedAlphaPixel</span>() const;</pre>
 
 <p>Multiplies each component by the alpha value (and, in the case of the integer pixel
   formats, divides by the maximum component value). This can be useful in some applications,
@@ -1517,8 +1526,8 @@ Pixel_t premultipliedAlphaPixel() const;</pre>
 
 <h4>Clamping</h4>
 
-<pre>void clamp();
-PixelF clampedPixel() const;</pre>
+<pre class="synopsis">void <span class="funcname">clamp</span>();
+PixelF <span class="funcname">clampedPixel</span>() const;</pre>
 
 <p>These functions are exclusive to <code>WPngImage::PixelF</code> (because it's the only
   pixel format that can go outside its normal range).</p>
