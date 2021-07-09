@@ -1,5 +1,5 @@
 # WPngImage
-WPngImage v1.4.2 is a C++ library to manage images in PNG format. It can be used as a completely stand-alone library using the [lodepng](http://lodev.org/lodepng/) library (included), or using the official [libpng](http://www.libpng.org/) library.
+WPngImage v1.4.3 is a C++ library to manage images in PNG format. It can be used as a completely stand-alone library using the [lodepng](http://lodev.org/lodepng/) library (included), or using the official [libpng](http://www.libpng.org/) library.
 
 The main goal of WPngImage is to be as easy and simple to use as possible, while still being expressive and supporting a variety of PNG pixel formats. The design philosophy of this library is to aim for simplicity and ease-of-use, using a "plug&play" principle: Just a couple of source files. Simply add them to your project, and that's it. No myriads of source files, no configuration scripts and makefiles necessary.
 

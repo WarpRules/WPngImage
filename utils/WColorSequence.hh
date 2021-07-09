@@ -344,21 +344,21 @@ typename WColorSequence<Pixel_t>::Settings WColorSequence<Pixel_t>::currentSetti
 }
 
 template<>
-WPngImage::Pixel8::Component_t WColorSequence<WPngImage::Pixel8>::getCTFactor(Float f)
+inline WPngImage::Pixel8::Component_t WColorSequence<WPngImage::Pixel8>::getCTFactor(Float f)
 {
     return static_cast<WPngImage::Pixel8::Component_t>
         (f * static_cast<Float>(WPngImage::Pixel8::kComponentMaxValue));
 }
 
 template<>
-WPngImage::Pixel16::Component_t WColorSequence<WPngImage::Pixel16>::getCTFactor(Float f)
+inline WPngImage::Pixel16::Component_t WColorSequence<WPngImage::Pixel16>::getCTFactor(Float f)
 {
     return static_cast<WPngImage::Pixel16::Component_t>
         (f * static_cast<Float>(WPngImage::Pixel16::kComponentMaxValue));
 }
 
 template<>
-WPngImage::PixelF::Component_t WColorSequence<WPngImage::PixelF>::getCTFactor(Float f)
+inline WPngImage::PixelF::Component_t WColorSequence<WPngImage::PixelF>::getCTFactor(Float f)
 {
     return f;
 }
