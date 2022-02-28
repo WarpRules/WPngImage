@@ -1,0 +1,637 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>WVerticalBarGraph documentation</title>
+  <style type="text/css"> <!--
+html
+{
+  background-color: #DDDDDD;
+}
+
+body
+{
+  background-color: white;
+  margin-left: 5%;
+  margin-top: 16px;
+  margin-right: 5%;
+  padding-top: 2em;
+  padding-left: 7%;
+  padding-right: 7%;
+  padding-bottom: 2%;
+  border-color: black;
+  border: solid;
+  border-width: 1px;
+}
+
+h1
+{
+  text-align: center;
+  background-color: #FFEEA0;
+  padding-bottom: 0.2em;
+  padding-top: 0.1em;
+}
+
+h2
+{
+  background-color: #FFE0A0;
+  padding-left: 0.5em;
+}
+
+h3
+{
+  background-color: #FFFFA0;
+}
+
+h4
+{
+  background-color: #FFFFD0;
+}
+
+li
+{
+  padding-top: 0.3em;
+}
+
+pre
+{
+  background-color: #F0E8E0;
+  padding-left: 1em;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-color: black;
+  border-style: solid;
+  border-width: 1px;
+}
+
+img
+{
+  border-color: #D0D0D0;
+  border-style: solid;
+  border-width: 1px;
+}
+
+.synopsis
+{
+  background-color: #E0E0F0;
+}
+
+code
+{
+  font-family: monospace;
+  color: #206000;
+}
+
+.comment
+{
+  color: #008000;
+}
+
+.funcname
+{
+  color: #0050FF;
+}
+--> </style>
+</head>
+
+<body>
+<h1>WVerticalBarGraph documentation</h1>
+
+<p>This is a small utility class to easily easily create simple bar graphs. The graph may optionally have axis tick marks,
+  horizontal grid lines, horizontal lines marking particular values, and labels for the bars, grid lines and value lines.
+  Almost everything about the geometry and coloring can be fine-tuned from the defaults.</p>
+
+<p>Table of contents:</p>
+
+<p><ol>
+    <li><a href="#examples">Examples</a></li>
+    <li><a href="#draw">Drawing the graph</a>
+    <li><a href="#graphdata">Graph data</a>
+      <ul><li><a href="#barheightvalues">Bar height values</a></li>
+          <li><a href="#customyvalues">Custom Y axis values</a></li>
+          <li><a href="#labeldrawing">Label drawing functions</a></li></ul>
+    </li>
+    <li><a href="#settings">Graph settings</a>
+      <ul><li><a href="#maxdimensions">Maximum image dimensions</a></li>
+          <li><a href="#scalingfactors">Scaling factors</a></li>
+          <li><a href="#imagemargins">Image margins</a></li>
+          <li><a href="#barsettings">Bar settings</a></li>
+          <li><a href="#axes">X and Y axis settings</a></li>
+          <li><a href="#yaxisticks">Y axis tick marks</a></li>
+          <li><a href="#gridlines">Horizontal grid lines</a></li>
+          <li><a href="#valuemarkers">Custom value marker lines</a></li>
+          <li><a href="#colors">Colors</a></li>
+          <li><a href="#labelalignment">Label alignment defaults</a></li>
+          <li><a href="#drawingorder">Drawing order</a></li>
+      </ul>
+    </li>
+    <li><a href="#tips">Tips</a></li>
+</ol></p>
+</body></html>
+
+<h2 id="examples">1. Examples</h2>
+<h3>Minimal example</h3>
+<p><pre>#include "WPngImage/utils/WVerticalBarGraph/WVerticalBarGraph.hh"
+
+int main()
+{
+    <span class="comment">// Heights are in permilles (ie. the unit is 1000)</span>
+    int barHeights[] = { 2000, 4500, 5000, 1500, 750, 3800 };
+
+    WVerticalBarGraph::GraphData graphData;
+    graphData.barHeightPermilles = barHeights;
+    graphData.barHeightsAmount = sizeof(barHeights)/sizeof(int);
+
+    WPngImage image;
+    WVerticalBarGraph::createImage(image, graphData, {});
+    image.saveImage("example1.png").printErrorMsg();
+}</pre></p>
+
+<p><center><img src="DocumentationImages/example1.png" /></center></p>
+
+<h3>Changing some settings</h3>
+<p>Let's change the previous example to contain the following:</p>
+
+<p><pre>    WVerticalBarGraph::Settings settings;
+    settings.yAxis_Tick_Length = 4;
+    settings.yAxis_Tick_GridLine_Width = 1;
+    settings.bar_TotalWidth = 17;
+    settings.bar_Spacing = 12;
+    settings.scalingFactorPerMille_BarHeights = 2000;
+    settings.color_Background.set(200, 230, 255);
+    settings.color_Bar_Inside.set(255, 180, 50);
+
+    WPngImage image;
+    WVerticalBarGraph::createImage(image, graphData, settings);
+    image.saveImage("example2.png").printErrorMsg();</pre></p>
+
+<p><center><img src="DocumentationImages/example2.png" /></center></p>
+
+<h3>Adding labels</h3>
+<p>To add labels to the grid ticks and the bars, we add the following to the previous example.</p>
+
+<p>(Note that <code>WVerticalBarGraph</code> does not itself provide a way to create the label images themselves. These need to be created
+  in some other way.)</p>
+
+<p><pre>    settings.imageMargin_Left = 24;
+    settings.imageMargin_Bottom = 24;
+
+    <span class="comment">// The label images</span>
+    const char *const labelFileNames[] =
+        { "1.png", "2.png", "3.png", "4.png", "5.png",
+          "A.png", "B.png", "C.png", "D.png", "E.png", "F.png" };
+    WPngImage labelImages[11];
+    for(unsigned i = 0; i < 11; ++i)
+        labelImages[i].loadImage(labelFileNames[i]).printErrorMsg();
+
+    <span class="comment">// Label drawing function for the Y axis</span>
+    graphData.drawLabelFunc_yAxisTick =
+        [&labelImages](int index, WPngImage& destImage, int x, int y,
+                       WVerticalBarGraph::LabelGeometry geometry)
+    {
+        if(index < 5) geometry.drawImage(destImage, x, y, labelImages[index]);
+    };
+
+    <span class="comment">// Label drawing function for the X axis</span>
+    graphData.drawLabelFunc_Bar =
+        [&labelImages](int index, WPngImage& destImage, int x, int y,
+                       WVerticalBarGraph::LabelGeometry geometry)
+    {
+        if(index < 6) geometry.drawImage(destImage, x, y, labelImages[index + 5]);
+    };</pre></p>
+
+<p><center><img src="DocumentationImages/example3.png" /></center></p>
+
+<h2 id="draw">2. Drawing the graph</h2>
+
+<p>Function declaration:</p>
+
+<p><pre>void WVerticalBarGraph::createImage
+    (WPngImage&, const WVerticalBarGraph::GraphData&, WVerticalBarGraph::Settings);</pre></p>
+
+<p><b>Example:</b></p>
+
+<p><pre>WVerticalBarGraph::GraphData graphData; <span class="comment">// See below for details</span>
+WVerticalBarGraph::Settings settings; <span class="comment">// See below for details</span>
+
+WPngImage image;
+WVerticalBarGraph::createImage(image, graphData, settings);</pre></p>
+
+<h2 id="graphdata">3. Graph data</h2>
+
+<p>The <code>WVerticalBarGraph::GraphData</code> struct is used to specify:</p>
+
+<p><ul><li>Bar height values.</li>
+    <li>Optionally: Custom particular Y axis values (which will be drawn as horizontal lines).</li>
+    <li>Optionally: A bar (ie. X axis) label image drawing function.</li>
+    <li>Optionally: A Y axis tick mark label image drawing function.</li>
+    <li>Optionally: A label image drawing function for the custom particular Y axis values.</li></ul><p>
+
+<h3 id="barheightvalues">Bar height values</h3>
+
+<p><code>WVerticalBarGraph::GraphData</code> member variables:</p>
+
+<p><pre>const int *barHeightPermilles = nullptr;
+std::size_t barHeightsAmount = 0;</pre></p>
+
+<p>The bar height values are specified in permilles. In other words a bar height of 1 unit is specified as 1000
+  (this allows specifying fractional heights up to a thousandth of precision). The number of drawn bars is determined
+  by the <code>barHeightsAmount</code> member variable. The array pointed to by <code>barHeightPermilles</code> must
+  contain that many values.</p>
+
+<p><b>Example:</b></p>
+
+<p><pre>int barHeights[] = { 2000, 4500, 5000, 1500, 750, 3800 };
+
+WVerticalBarGraph::GraphData graphData;
+graphData.barHeightPermilles = barHeights;
+graphData.barHeightsAmount = sizeof(barHeights)/sizeof(int);</pre></p>
+
+<p><b>Tips:</b></p>
+
+<p>Note that nothing forces the heights to be specified in a C style array. They can be specified eg. in a <code>std::vector</code>
+  or even a <code>std::initializer_list</code>. For example:</p>
+
+<p><pre>std::vector&lt;int&gt; values1 = <span class="comment">/* something */</span>;
+graphData.barHeightPermilles = values1.data();
+graphData.barHeightsAmount = values1.size();
+
+std::initializer_list&lt;int&gt; values2 = <span class="comment">/* something */</span>;
+graphData.barHeightPermilles = values2.data();
+graphData.barHeightsAmount = values2.size();</pre></p>
+
+<h3 id="customyvalues">Custom Y axis values</h3>
+
+<p><code>WVerticalBarGraph::GraphData</code> member variables:</p>
+
+<p><pre>const int *yAxisValuePermilles = nullptr;
+std::size_t yAxisValuesAmount = 0;</pre></p>
+
+<p>This can be used to display particular individual horizontal grid lines at given Y heights. They are specified very similarly
+  to the bar heights.
+
+<p><b>Example:</b></p>
+
+<p><pre>int yAxisValues[] = { 1500, 2500, 3125 };
+
+WVerticalBarGraph::GraphData graphData;
+graphData.yAxisValuePermilles = yAxisValues;
+graphData.yAxisValuesAmount = sizeof(yAxisValues)/sizeof(int);</pre></p>
+
+<p><b>Tips:</b></p>
+
+<p>The geometric and color details of these horizontal lines can be fine-tuned in the <code>WVerticalBarGraph::Settings</code> struct,
+  and optional Y axis labels can also be drawn using the <code>drawLabelFunc_yAxisValueMarker</code> member variable described below.</p>
+
+<h3 id="#labeldrawing">Label drawing functions</h3>
+
+<p>Types:</p>
+
+<p><pre>namespace WVerticalBarGraph
+{
+    using DrawLabelImageCallbackFunction =
+        std::function&lt;void(int, WPngImage&, int, int, WVerticalBarGraph::LabelGeometry)&gt;;
+}
+
+struct WVerticalBarGraph::LabelGeometry
+{
+    enum class HAlign { left, center, right };
+    enum class VAlign { bottom, center, top };
+
+    HAlign horizontalAlignment = HAlign::center;
+    VAlign verticalAlignment = VAlign::center;
+    int xOffset = 0, yOffset = 0;
+
+    void drawImage(WPngImage& destImage, int destX, int destY, const WPngImage&);
+    void drawImage(WPngImage& destImage, int destX, int destY, const WPngImage&,
+                   int srcX, int srcY, int srcWidth, int srcHeight);
+}</pre></p>
+
+<p><code>WVerticalBarGraph::GraphData</code> member variables:</p>
+
+<p><pre>WVerticalBarGraph::DrawLabelImageCallbackFunction drawLabelFunc_Bar;
+WVerticalBarGraph::DrawLabelImageCallbackFunction drawLabelFunc_yAxisTick;
+WVerticalBarGraph::DrawLabelImageCallbackFunction drawLabelFunc_yAxisValueMarker;</pre></p>
+
+<p><b>Callback function format</b></p>
+
+<p>These callback functions, if specified, can be used to draw label images below or above each bar, and on the Y axis, at the tick marks
+  and the custom Y values. (These are specified as callback functions to allow for complete freedom on what is drawn, how it is
+  drawn, and where.)</p>
+
+<p>Note that <code>WVerticalBarGraph</code> does not itself provide utilities to create these label images. It is up to the calling code
+  to create the label images themselves.</p>
+
+<p>The signature of a label drawing callback function has to be of the form:</p>
+<p><pre>void(int, WPngImage&, int, int, WVerticalBarGraph::LabelGeometry)</pre></p>
+<p>For example:</p>
+<p><pre>void drawYAxisLabel(int index, WPngImage& destImage, int x, int y,
+                    WVerticalBarGraph::LabelGeometry geometry)
+{
+    <span class="comment">// Draw label 'index' to destImage, at (x, y)</span>
+}</pre></p>
+
+<p>The <code>index</code> paramter (which always starts at 0) indicates which bar, Y axis tick mark, or custom value label is being draw.</p>
+
+<p>Note that using the <code>WVerticalBarGraph::LabelGeometry</code> parameter is optional and can be ignored if not needed.
+  However, using it can make drawing the label image at the proper position, using the proper alignment and offset, significantly simpler.
+  (Default alignments and offsets are specified in the <code>WVerticalBarGraph::Settings</code> struct.) At its simplest, it can be used like:</p>
+
+<p><pre>void drawYAxisLabel(int index, WPngImage& destImage, int x, int y,
+                    WVerticalBarGraph::LabelGeometry geometry)
+{
+    <span class="comment">// Draw image from a 'labelImages' array somewhere else:</span>
+    geometry.drawImage(destImage, x, y, labelImages[index]);
+}</pre></p>
+
+<p>For more complex positioning the member variables of the <code>WVerticalBarGraph::LabelGeometry</code> can be used (either by changing
+  their values and then calling <code>geometry.drawImage()</code>, or by calling <code>destImage.drawImage()</code> or its other functions
+  directly.)</p>
+
+<p><b>The LabelGeometry struct</b></p>
+
+<p><code>WVerticalBarGraph::LabelGeometry</code> is a utility struct to make drawing label images simpler. It is used to specify the
+  horizontal and vertical alignments of the label image, as well as its x and y offset from the base position of the label. The default
+  values of these for each of the three types of label is specified in the <code>WVerticalBarGraph::Settings</code> struct.</p>
+
+<p>It also provides two <code>drawImage()</code> member functions (which are similar in parameters as those in <code>WPngImage</code>)
+  that automatically take into accout the specified alignments and offsets. As with the <code>WPngImage</code> equivalents, the first
+  function draws the entire parameter image, and the second function draws a section of it. (The section itself is treated as if it
+  where an entire image, with respect to alignment and offset.)</p>
+
+<p><b>Tips</b></p>
+
+<p>As the <code>WVerticalBarGraph::LabelGeometry</code> is received by value, its contents can be freely modified before calling
+  its <code>drawImage()</code> functions. For example, changing the offset of each even label can be done like:</p>
+
+<p><pre>void drawYAxisLabel(int index, WPngImage& destImage, int x, int y,
+                    WVerticalBarGraph::LabelGeometry geometry)
+{
+    if(index % 2 == 0) geometry.xOffset -= 40;
+    geometry.drawImage(destImage, x, y, labelImages[index]);
+}</pre></p>
+
+<p>It may often be handier to specify a label drawing function as a lambda rather than its own separate function. For example:</p>
+
+<p><pre>graphData.drawLabelFunc_yAxisTick =
+    [&labelImages](int index, WPngImage& destImage, int x, int y,
+                   WVerticalBarGraph::LabelGeometry geometry)
+{
+    geometry.drawImage(destImage, x, y, labelImages[index]);
+};</pre></p>
+
+<h2 id="settings">4. Settings</h2>
+
+<p>The <code>WVerticalBarGraph::Settings</code> struct contains an extensive amount of values to fine-tune the geometry and
+  colors of the generated bar graph image.</p>
+
+<h3 id="maxdimensions">Maximum image dimensions</h3>
+<p><code>WVerticalBarGraph::Settings</code> member variables:</p>
+
+<p><pre>int maximumImageWidth = 65536;
+int maximumImageHeight = 65536;</pre></p>
+
+<p><code>WVerticalBarGraph::createImage()</code> will never create an image with larger dimensions than this.
+  This is a safety feature (so that the calling code does not accidentally try to create an image so large that the program
+  runs out of memory and crashes or starts swapping by mistake.)</p>
+
+<p>You can assign smaller values to make the security even tighter (note that a 65536x65536 image already requires 16 GB of RAM),
+  or larger if for some reason these maximums are not enough.</p>
+
+<p>If the generated graph would be larger than this maximum, the image will simply be clipped.</p>
+
+<p><b>Example:</b></p>
+
+<p><pre><span class="comment">// Never create an image larger than 2048x2048:</span>
+settings.maximumImageWidth = 2048;
+settings.maximumImageHeight = 2048;</pre></p>
+
+<h3 id="scalingfactors">Scaling factors</h3>
+<p><code>WVerticalBarGraph::Settings</code> member variables:</p>
+
+<p><pre>int scalingFactorPerMille_Global = 1000;
+int scalingFactorPerMille_Positions = 1000;
+int scalingFactorPerMille_LineWidths = 1000;
+int scalingFactorPerMille_BarHeights = 1000;
+bool roundScaledValuesToNearest = true;</pre></p>
+
+<p>These variables can be used to scale different parts of the graphs larger or smaller. The factors are specified in permilles
+  (ie. 1000 means a factor of 1.0, ie. no change.)</p>
+
+<p><ul><li><code>scalingFactorPerMille_Global</code></li></ul></p>
+
+<p>All geometry is multiplied by this factor. It can be used to easily scale everything larger or smaller at once.
+  (Note that if fractional factors are used the image dimensions may not change exactly by this factor because all values are
+  rounded to an integer.) The size of label images is not affected by this.</p>
+
+<p>This factor is applied in addition to the other scaling factors.</p>
+
+<p><ul><li><code>scalingFactorPerMille_Positions</code></li></ul></p>
+
+<p>All positions are scaled by this factor, without affecting line widths.</p>
+
+<p><ul><li><code>scalingFactorPerMille_LineWidths</code></li></ul></p>
+
+<p>All line widths are scaled by this factor, without affecting positions.</p>
+
+<p><ul><li><code>scalingFactorPerMille_BarHeights</code></li></ul></p>
+
+<p>Bar heights can be scaled taller or shorter with this factor. Note that this also affects the position of the Y axis ticks, grid lines
+  and custom values (so that they will still correspond to the bar heights of the same value.)</p>
+
+<p><b>Example:</b></p>
+
+<p><pre><span class="comment">// Double the size of everything:</span>
+settings.scalingFactorPerMille_Global = 2000;
+
+<span class="comment">// Make bars 50% higher:</span>
+settings.scalingFactorPerMille_BarHeights = 1500;</pre></p>
+
+<h3 id="imagemargins">Image margins</h3>
+<p><code>WVerticalBarGraph::Settings</code> member variables:</p>
+
+<p><pre>int imageMargin_Left = 20;
+int imageMargin_Right = 20;
+int imageMargin_Bottom = 20;
+int imageMargin_Top = 20;</pre></p>
+
+<p>Specify the size of each of the four margins. (These can be especially important to make more space for label images.)</p>
+
+<p><b>Example:</b></p>
+
+<p><pre><span class="comment">// Add more space to the left and bottom of the image:</span>
+settings.imageMargin_Left = 50;
+settings.imageMargin_Bottom = 40;</pre></p>
+
+<h3 id="barsettings">Bar settings</h3>
+<p><code>WVerticalBarGraph::Settings</code> member variables:</p>
+
+<p><pre>int bar_TotalWidth = 25;
+int bar_BorderWidth = 2;
+bool bar_DrawBottomBorder = false;
+int bar_Spacing = 8;
+int bar_firstBarSpacingFromYAxis = 8;</pre></p>
+
+<p><code>bar_TotalWidth</code> specifies the total width of a bar in pixels.</p>
+
+<p>This is essentially the setting that determines the overall size of the bars. Changing this also changes the height of the bars:
+  A bar of unit height (ie. 1000) will always be a square (before it is scaled by <code>scalingFactorPerMille_BarHeights</code>).
+  If you want to change the width of the bars while retaining their height, change <code>scalingFactorPerMille_BarHeights</code> by a
+  proportional amount. (For example if you make the bars 20% thinner, increase the bar height scaling factor by 20%, or thereabouts.)</p>
+
+<p>Border lines will be drawn around the bars (within their total width), the width of these border lines being
+  <code>bar_BorderWidth</code> (set it to <code>0</code> to disable border lines). <code>bar_DrawBottomBorder</code>
+  determines if a border line should also be drawn where the bar touches the X axis.</p>
+
+<p>The spacing between bars, and the space between the left edge of the first bar and the Y axis can be specified with
+  <code>bar_Spacing</code> and <code>bar_firstBarSpacingFromYAxis</code>.</p>
+
+<p><b>Example:</b></p>
+
+<p><pre><span class="comment">// Make the bars thinner, taller, and more spaced out:</span>
+settings.bar_TotalWidth = 17;
+settings.bar_Spacing = 12;
+settings.bar_firstBarSpacingFromYAxis = 14;
+settings.scalingFactorPerMille_BarHeights = 2000;</pre></p>
+
+<h3 id="axes">X and Y axis settings</h3>
+<p><code>WVerticalBarGraph::Settings</code> member variables:</p>
+
+<p><pre>int xAxis_Width = 3;
+int xAxis_LengthAfterLastBar = 8;
+int yAxis_Width = 3;
+int xAxis_LengthAfterHighestBar = 8;</pre></p>
+
+<p>Set the line width of the X and Y axes, and specify the X axis length after the right edge of the last bar,
+  and the Y axis length after the upper edge of the highest bar.</p>
+
+<p><b>Example:</b></p>
+
+<p><pre>settings.xAxis_Width = 5;
+settings.xAxis_LengthAfterLastBar = 20;
+settings.yAxis_Width = 5;
+settings.xAxis_LengthAfterHighestBar = 20;</pre></p>
+
+<h3 id="yaxisticks">Y axis tick marks</h3>
+<p><code>WVerticalBarGraph::Settings</code> member variables:</p>
+
+<p><pre>int yAxis_Tick_Length = 0;
+int yAxis_Tick_Width = 3;
+int yAxis_Tick_SteppingPermille = 1000;
+bool yAxis_Tick_DrawTickAtOrigin = false;</pre></p>
+
+<p>If <code>yAxis_Tick_Length</code> is not equal to zero and <code>yAxis_Tick_Width</code> is larger than zero,
+  "tick marks", ie. horizontal lines will be drawn touching the Y axis at regular intervals. This interval is
+  specified by <code>yAxis_Tick_SteppingPermille</code> (in permilles, equivalent to bar heights). These "tick marks"
+  can be used to mark units on the Y axis.</p>
+
+<p>A tick mark will be drawn at the origin if <code>yAxis_Tick_DrawTickAtOrigin</code> is <code>true</code>, else
+  the marks will start at the first stepping unit.</p>
+
+<p>Note that the <code>scalingFactorPerMille_BarHeights</code> will also multiply <code>yAxis_Tick_SteppingPermille</code>
+  (so that the tick marks still match bar heights.)</p>
+
+<p><b>Example:</b></p>
+
+<p><pre><span class="comment">// Turn tick marks on:</span>
+settings.yAxis_Tick_Length = 8;
+settings.yAxis_Tick_DrawTickAtOrigin = true;</pre></p>
+
+<h3 id="gridlines">Horizontal grid lines</h3>
+<p><code>WVerticalBarGraph::Settings</code> member variables:</p>
+
+<p><pre>int yAxis_Tick_GridLine_Width = 0;
+int yAxis_Tick_GridLine_LengthAfterLastBar = 8;</pre></p>
+
+<p>Grid lines are horizontal lines drawn at the same heights as the tick marks (or where the tick marks would
+  be drawn if enabled) that span the entire width of the graph, plus <code>yAxis_Tick_GridLine_LengthAfterLastBar</code>
+  pixels. They are turned on if <code>yAxis_Tick_GridLine_Width</code> is larger than 0.</p>
+
+<p>(Although tick marks and grid lines are both horizontal lines starting from the Y axis and drawn at the same heights, they are
+  drawn and set up separately to allow different line widths and colors for them.)</p>
+
+<p><pre><span class="comment">// Turn grid lines on:</span>
+settings.yAxis_Tick_GridLine_Width = 1;</pre></p>
+
+<h3 id="valuemarkers">Custom value marker lines</h3>
+<p><code>WVerticalBarGraph::Settings</code> member variables:</p>
+
+<p><pre>int yAxis_ValueMarkerLine_Width = 1;
+int yAxis_ValueMarkerLine_LengthAfterLastBar = 8;</pre></p>
+
+<p>Set the width and extra length of custom value marker lines, which are specified with the
+  <a href="#customyvalues">custom Y axis values</a> of <code>WVerticalBarGraph::GraphData</code>.</p>
+
+<h3 id="colors">Colors</h3>
+<p><code>WVerticalBarGraph::Settings</code> member variables:</p>
+
+<p><pre>WPngImage::Pixel8 color_Background { 255, 255, 255 };
+WPngImage::Pixel8 color_XAxis { 0, 0, 0 };
+WPngImage::Pixel8 color_YAxis { 0, 0, 0 };
+WPngImage::Pixel8 color_YAxis_Tick { 64, 64, 64 };
+WPngImage::Pixel8 color_YAxis_GridLine { 128, 128, 128 };
+WPngImage::Pixel8 color_YAxis_ValueMarkerLine { 240, 128, 4 };
+WPngImage::Pixel8 color_Bar_Inside { 128, 255, 128 };
+WPngImage::Pixel8 color_Bar_Border { 0, 0, 0 };</pre></p>
+
+<p>These can be used to specify the color of the different elements of the graph. (Tip: The easiest way to change these
+  is to use their <code>set()</code> function, as exemplified below.)</p>
+
+<p><b>Example:</b></p>
+
+<p><pre><span class="comment">// Change the color of the background, the bars and the grid lines:</span>
+settings.color_Background.set(200, 230, 255);
+settings.color_Bar_Inside.set(255, 180, 50);
+settings.color_YAxis_GridLine.set(64, 64, 192);</pre></p>
+
+<h3 id="labelalignment">Label alignment defaults</h3>
+<p><code>WVerticalBarGraph::Settings</code> member variables:</p>
+
+<p><pre>LabelGeometry yAxis_Tick_Label = { LabelGeometry::HAlign::right, LabelGeometry::VAlign::center, -8, 0 };
+LabelGeometry yAxis_ValueMarker_Label = { LabelGeometry::HAlign::right, LabelGeometry::VAlign::center, -8, 0 };
+LabelGeometry bar_Label = { LabelGeometry::HAlign::center, LabelGeometry::VAlign::top, 0, 4 };
+bool bar_Label_BelowBar = true;</pre></p>
+
+<p>The default label alignment and offset values passed to the <a href="#labeldrawing">label drawing functions</a></li>.</p>
+
+<p><b>Example:</b></p>
+
+<p><pre><span class="comment">// Adjust the offset of tick labels:</span>
+settings.yAxis_Tick_Label.xOffset = -14;</pre></p>
+
+<h3 id="drawingorder">Drawing order</h3>
+<p><code>WVerticalBarGraph::Settings</code> member variables:</p>
+
+<p><pre>int zDepth_YAxis_GridLine = 0;
+int zDepth_YAxis_Tick = 10;
+int zDepth_Bars = 20;
+int zDepth_Axes = 30;
+int zDepth_YAxis_ValueMarkerLine = 40;
+int zDepth_YAxis_TickLabel = 50;
+int zDepth_BarLabel = 60;
+int zDepth_YAxis_ValueMarkerLabel = 70;</pre></p>
+
+<p>These values can be changed to affect the order in which the different elements of the graph are drawn.
+  An element with a smaller value is drawn before an element with a larger value.</p>
+
+<p><b>Example:</b></p>
+
+<p><pre><span class="comment">// Draw grid lines on top of the bars:</span>
+settings.zDepth_YAxis_GridLine = 65;</pre></p>
+
+<h2 id="tips">5. Tips</h2>
+<h3>Embedding/drawing the graph into another image</h3>
+
+<p>If you want to embed / draw the graph into another image, or even have a non-monocolored background to the graph,
+  the easiest way to do this is to set a completely transparent background color in the settings, create the graph image,
+  and then draw it onto the other image using its <code>drawImage()</code> function. Like this:</p>
+
+<p><pre>WVerticalBarGraph::Settings settings;
+settings.color_Background.set(0, 0); <span class="comment">// transparent background</span>
+
+WPngImage graphImage;
+WVerticalBarGraph::createImage(graphImage, graphData, settings);
+
+anotherImage.drawImage(100, 200, graphImage);</pre></p>
+
+</body></html>

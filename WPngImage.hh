@@ -8,6 +8,10 @@
 #define WPNGIMAGE_RESTRICT_TO_CPP98 0
 #endif
 
+#ifndef WPNGIMAGE_USE_LIBPNG
+#define WPNGIMAGE_USE_LIBPNG 0
+#endif
+
 #ifndef WPNGIMAGE_DISABLE_PNG_FILE_IO_SUPPORT
 #define WPNGIMAGE_DISABLE_PNG_FILE_IO_SUPPORT 0
 #endif
@@ -34,9 +38,9 @@
 #define WPNGIMAGE_CONSTEXPR
 #endif
 
-#define WPNGIMAGE_VERSION 0x010403
-#define WPNGIMAGE_VERSION_STRING "1.4.3"
-#define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2019 Juha Nieminen"
+#define WPNGIMAGE_VERSION 0x010500
+#define WPNGIMAGE_VERSION_STRING "1.5.0"
+#define WPNGIMAGE_COPYRIGHT_STRING "WPngImage v" WPNGIMAGE_VERSION_STRING " (C)2022 Juha Nieminen"
 
 
 //============================================================================

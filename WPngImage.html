@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>WPngImage 1.4.3 documentation</title>
+  <title>WPngImage 1.5.0 documentation</title>
   <style type="text/css"> <!--
 html
 {
@@ -116,22 +116,12 @@ code
 </head>
 
 <body>
-<h1>WPngImage 1.4.3 documentation</h1>
+<h1>WPngImage 1.5.0 documentation</h1>
 
 <p><code>WPngImage</code> is a C++ library to manage images in PNG format. It can be used
   as a completely stand-alone library using the <a href="http://lodev.org/lodepng/">lodepng</a>
-  library (included), or using the official <a href="http://www.libpng.org/">libpng</a> library.</p>
-
-<p class="noticebox"><b class="important">NOTE:</b> The source files <code>WPngImage_libpng.cc</code> and
-  <code>WPngImage_lodepng.cc</code> are mutually exclusive (they implement the same functions).<br />
-  <b>Do not add both of them</b> to your Makefile or project!<br />Only add one of them: The former if intending
-  to use libpng, or the latter if intending to use lodpng. Also, add <code>lodepng.cpp</code> to the
-  Makefile or project only if using the latter. Consult the <a href="#compiling">compiling</a>
-  section for more details.</p>
-
-<p>If in doubt, <span class="notice">add <code>WPngImage.cc</code>, <code>WPngImage_lodepng.cc</code> and
-  <code>lodepng.cpp</code> to your Makefile, project or compiler command</span>, and ignore
-  <code>WpngImage_libpng.cc</code>.</p>
+  library (included, and used by default), or using the official <a href="http://www.libpng.org/">libpng</a>
+  library.</p>
 
 <p>The main goal of <code>WPngImage</code> is to be as easy and simple to use as possible, while
   still being expressive and supporting a variety of PNG pixel formats. The design
@@ -546,12 +536,11 @@ pixel formats</h3>
 <h3 id="compiling_standalone">As a stand-alone class</h3>
 
 <p>To integrate <code>WPngImage</code> into your project as a stand-alone class (but still
-  with full PNG saving and loading support), add the following source code files to your
+  with full PNG saving and loading support), simply add the following source code files to your
   project or compiler command:</p>
 
 <ul>
   <li><code>WPngImage.cc</code></li>
-  <li><code>WPngImage_lodepng.cc</code></li>
   <li><code>lodepng.cpp</code></li>
 </ul>
 
@@ -560,23 +549,23 @@ pixel formats</h3>
 
 <p>For example, in a typical Linux system a small program could be compiled like:</p>
 
-<pre>g++ -O3 -std=c++14 example.cc WPngImage.cc WPngImage_lodepng.cc lodepng.cpp</pre>
+<pre>g++ -Ofast -march=native example.cc WPngImage/WPngImage.cc WPngImage/lodepng.cpp</pre>
 
 <h3 id="compiling_libpng">Using libpng</h3>
 
 <p>If you would prefer to use the official <a href="http://www.libpng.org/">libpng</a> library
-  instead, add the following source code files to your project or compiler command:</p>
+  instead of lodepng, the preprocessor macro <code>WPNGIMAGE_USE_LIBPNG</code> needs to be set
+  to <code>1</code> in the project settings or compiler parameters.</p>
+
+<p>In this case only the source file:</p>
 
 <ul>
   <li><code>WPngImage.cc</code></li>
-  <li><code>WPngImage_libpng.cc</code></li>
 </ul>
 
-<p>Note, however, that in this case libpng needs to be available to your compiler.</p>
+<p>needs to be added to the project. In a typical Linux system a program can be compiled like:</p>
 
-<p>In a typical Linux system a program can be compiled like:</p>
-
-<pre>g++ -O3 -std=c++14 example.cc WPngImage.cc WPngImage_libpng.cc -lpng</pre>
+<pre>g++ -Ofast -march=native -DWPNGIMAGE_USE_LIBPNG=1 example.cc WPngImage/WPngImage.cc -lpng</pre>
 
 <h3 id="compiling_nopng">Without PNG file support</h3>
 
@@ -593,10 +582,9 @@ pixel formats</h3>
   <li><code>WPngImage.cc</code></li>
 </ul>
 
-<p>ought to be compiled into the project. (Note that if you try to compile any of the other source files,
-  it will cause a compiler error.)</p>
+<p>ought to be added to the project.</p>
 
-<pre>g++ -O3 -std=c++14 -DWPNGIMAGE_DISABLE_PNG_FILE_IO_SUPPORT=1 example.cc WPngImage.cc</pre>
+<pre>g++ -Ofast -march=native -DWPNGIMAGE_DISABLE_PNG_FILE_IO_SUPPORT=1 example.cc WPngImage/WPngImage.cc</pre>
 
 <p>In this case, none of the <code>loadImage()</code> and <code>saveImage()</code> member functions will
   be compiled in, and therefore cannot be called. Likewise <code>WPngImage::IOStatus</code> will not be
@@ -641,7 +629,7 @@ pixel formats</h3>
 <pre class="synopsis">WPNGIMAGE_COPYRIGHT_STRING</pre>
 
 <p>A string containing short copyright info. For example,
-  <code>"WPngImage v1.1.0 (C)2016 Juha Nieminen"</code>.</p>
+  <code>"WPngImage v1.5.0 (C)2022 Juha Nieminen"</code>.</p>
 
 <!---------------------------------------------------------------------------->
 <h2 id="wpngimage_reference">WPngImage reference</h2>
@@ -1598,7 +1586,8 @@ static_assert(p1 != p2, "Error");</pre>
   has its own separate documentation inside that directory (linked here).</p>
 
 <ul>
-  <li><a href="utils/WColorSequence.html">WColorSequence</a>: A library for creating interpolated color sequences.</li>
+  <li><a href="utils/WColorSequence/WColorSequence.html">WColorSequence</a>: A library for creating interpolated color sequences.</li>
+  <li><a href="utils/WVerticalBarGraph/WVerticalBarGraph.html">WVerticalBarGraph</a>: A library for drawing simple vertical bar graphs.</li>
 </ul>
 
 </body></html>

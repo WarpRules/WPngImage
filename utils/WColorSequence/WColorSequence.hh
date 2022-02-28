@@ -1,12 +1,12 @@
-/* WPngImage
-   ---------
+/* WColorSequence
+   --------------
    This source code is released under the MIT license.
    For full documentation, consult the WColorSequence.html file.
 */
 
 #ifndef WCOLORSEQUENCE_INCLUDE_GUARD
 #define WCOLORSEQUENCE_INCLUDE_GUARD
-#include "../WPngImage.hh"
+#include "../../WPngImage.hh"
 #include <vector>
 #include <utility>
 #include <initializer_list>

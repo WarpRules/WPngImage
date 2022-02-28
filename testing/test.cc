@@ -7,7 +7,7 @@
 #warning "This is a test file. Do not include it in your project."
 #endif
 
-#include "WPngImage.hh"
+#include "../WPngImage.hh"
 #include <iostream>
 #include <cassert>
 #include <cmath>
@@ -3177,7 +3177,7 @@ static_assert(kPF_1 == kPF_6 && kPF_2 != kPF_3 && kPF_4 != kPF_5, "Comparison fa
 // Test WColorSequence
 //============================================================================
 #if !WPNGIMAGE_RESTRICT_TO_CPP98
-#include "utils/WColorSequence.hh"
+#include "../utils/WColorSequence/WColorSequence.hh"
 
 using WCS8 = WColorSequence8;
 using WCS16 = WColorSequence16;
