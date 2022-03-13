@@ -465,7 +465,7 @@ image.saveImage("photo_grayscale.png", WPngImage::kPngFileFormat_GA8);</pre>
 image.convertToPixelFormat(WPngImage::kPixelFormat_GA8);
 image.saveImage("photo_grayscale.png");</pre>
 
-<p>If you would prefer to retain the bit depth if the original PNG file, you can check this
+<p>If you would prefer to retain the bit depth of the original PNG file, you can check this
   depth with the <code>is8BPCPixelFormat()</code> or the <code>is16BPCPixelFormat()</code>
   functions. Thus you could write, for example:</p>
 
@@ -608,7 +608,7 @@ pixel formats</h3>
   <code>1</code> in your project/compiler settings (in which case <code>WPngImage.hh</code>
   doesn't need to be edited.) For example with g++ it would happen like:</p>
 
-<pre>g++ -O3 -DWPNGIMAGE_RESTRICT_TO_CPP98=1 example.cc WPngImage.cc WPngImage_lodepng.cc lodepng.cpp</pre>
+<pre>g++ -O3 -DWPNGIMAGE_RESTRICT_TO_CPP98=1 example.cc WPngImage.cc lodepng.cpp</pre>
 
 <!---------------------------------------------------------------------------->
 <h2 id="macros">Precompiler macros</h2>
@@ -619,12 +619,12 @@ pixel formats</h3>
 
 <p>An integer containing three values in its three least-significant bytes: Major version
   (third-least-significant byte), minor version (second-least-significant byte), minor
-  sub-version (least-significant byte). For example, the value <code>0x010100</code> indicates
-  the version 1.1.0.</p>
+  sub-version (least-significant byte). For example, the value <code>0x010500</code> indicates
+  the version 1.5.0.</p>
 
 <pre class="synopsis">WPNGIMAGE_VERSION_STRING</pre>
 
-<p>The version in string format. For example, <code>"1.1.0"</code>.</p>
+<p>The version in string format. For example, <code>"1.5.0"</code>.</p>
 
 <pre class="synopsis">WPNGIMAGE_COPYRIGHT_STRING</pre>
 
